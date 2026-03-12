@@ -1066,7 +1066,8 @@ function resetData(){
 }
 
 // ===================== SELECTION / ПОДБОРКА =====================
-let selCity = 'all';
+let selCities = new Set(); // empty = all
+let citySearch = '';
 let selCats = new Set(); // empty = all
 let selMode = 'client'; // client | full
 let selMinSubs = 0;
@@ -1076,7 +1077,7 @@ let selSelected = new Set();
 
 function getFilteredPabliki(){
   return PABLIKI_DB.filter(p => {
-    if(selCity !== 'all' && p.c !== selCity) return false;
+    if(selCities.size > 0 && !selCities.has(p.c)) return false;
     if(selCats.size > 0 && !selCats.has(p.t)) return false;
     if(p.s < selMinSubs) return false;
     if(p.p > selMaxPerItem) return false;
@@ -1096,9 +1097,13 @@ function renderSelection(app){
   
   const fmt = n => n.toLocaleString('ru-RU');
   
-  const cityOptions = ['all', ...PABLIKI_CITIES].map(c => 
-    `<button class="city-chip ${selCity===c?'active':''}" onclick="selCity='${c}';render()">${c==='all'?'Все города':c}</button>`
-  ).join('');
+  const allCitiesSet = [...new Set(PABLIKI_DB.map(p=>p.c))].sort((a,b)=>a.localeCompare(b,'ru'));
+  const filteredCities = citySearch ? allCitiesSet.filter(c=>c.toLowerCase().includes(citySearch.toLowerCase())) : PABLIKI_CITIES;
+  const cityOptions = [
+    `<button class="city-chip ${selCities.size===0?'active':''}" onclick="selCities.clear();render()">Все города</button>`,
+    ...filteredCities.map(c =>
+      `<button class="city-chip ${selCities.has(c)?'active':''}" onclick="if(selCities.has('${c.replace(/'/g,"\\'")}'))selCities.delete('${c.replace(/'/g,"\\'")}');else selCities.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`)
+  ].join('');
   
   const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
   const catOptions = [`<button class="city-chip ${selCats.size===0?'active':''}" onclick="selCats.clear();render()">Все категории</button>`,
@@ -1160,8 +1165,9 @@ function renderSelection(app){
     </div>
     
     <div class="filter-section">
-      <h4>🏙️ Город</h4>
-      <div class="city-chips">${cityOptions}</div>
+      <h4>🏙️ Город ${selCities.size>0?'<span style="color:var(--primary);font-weight:400;font-size:11px">('+selCities.size+' выбрано)</span>':''}</h4>
+      <input type="text" placeholder="🔍 Поиск города..." value="${citySearch}" oninput="citySearch=this.value;renderCityChips()" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;font-family:inherit;margin-bottom:8px">
+      <div class="city-chips" id="cityChips">${cityOptions}</div>
     </div>
     
     <div class="filter-section">
@@ -1215,6 +1221,18 @@ function renderSelection(app){
     </div>
     ${hasMore ? `<div style="text-align:center;padding:12px;color:var(--text2);font-size:12px">Показано ${showLimit} из ${filtered.length} · Используйте фильтры для уточнения</div>` : ''}
   `;
+}
+
+function renderCityChips(){
+  const allCitiesSet = [...new Set(PABLIKI_DB.map(p=>p.c))].sort((a,b)=>a.localeCompare(b,'ru'));
+  const filteredCities = citySearch ? allCitiesSet.filter(c=>c.toLowerCase().includes(citySearch.toLowerCase())) : PABLIKI_CITIES;
+  const el = document.getElementById('cityChips');
+  if(!el) return;
+  el.innerHTML = [
+    `<button class="city-chip ${selCities.size===0?'active':''}" onclick="selCities.clear();citySearch='';render()">Все города</button>`,
+    ...filteredCities.map(c =>
+      `<button class="city-chip ${selCities.has(c)?'active':''}" onclick="if(selCities.has('${c.replace(/'/g,"\\'")}'))selCities.delete('${c.replace(/'/g,"\\'")}');else selCities.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`)
+  ].join('');
 }
 
 function autoSelectByBudget(){
