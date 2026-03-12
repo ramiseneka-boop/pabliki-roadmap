@@ -1070,7 +1070,8 @@ let selCity = 'all';
 let selCat = 'all';
 let selMode = 'client'; // client | full
 let selMinSubs = 0;
-let selMaxPrice = 10000000;
+let selMaxPerItem = 10000000;
+let selBudget = 10000000;
 let selSelected = new Set();
 
 function getFilteredPabliki(){
@@ -1078,7 +1079,7 @@ function getFilteredPabliki(){
     if(selCity !== 'all' && p.c !== selCity) return false;
     if(selCat !== 'all' && p.t !== selCat) return false;
     if(p.s < selMinSubs) return false;
-    if(p.p > selMaxPrice) return false;
+    if(p.p > selMaxPerItem) return false;
     return true;
   }).sort((a,b) => b.s - a.s);
 }
@@ -1171,8 +1172,12 @@ function renderSelection(app){
         <input type="range" min="0" max="500000" step="5000" value="${selMinSubs}" oninput="document.getElementById('lblSubs').textContent=Number(this.value).toLocaleString('ru-RU')" onchange="selMinSubs=+this.value;render()">
       </div>
       <div class="filter-row">
-        <div class="filter-label">Макс. цена за паблик (пост+сторис) <span id="lblPrice">${selMaxPrice>=10000000?'∞':fmt(selMaxPrice)+'₸'}</span></div>
-        <input type="range" min="5000" max="10000000" step="5000" value="${selMaxPrice}" oninput="document.getElementById('lblPrice').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸'" onchange="selMaxPrice=+this.value;render()">
+        <div class="filter-label">Макс. цена за 1 паблик <span id="lblPrice">${selMaxPerItem>=10000000?'∞':fmt(selMaxPerItem)+'₸'}</span></div>
+        <input type="range" min="5000" max="10000000" step="5000" value="${selMaxPerItem}" oninput="document.getElementById('lblPrice').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸'" onchange="selMaxPerItem=+this.value;render()">
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">💰 Общий бюджет <span id="lblBudget" style="font-size:13px">${selBudget>=10000000?'∞':fmt(selBudget)+'₸'}</span></div>
+        <input type="range" min="100000" max="10000000" step="50000" value="${selBudget}" oninput="document.getElementById('lblBudget').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸'" onchange="selBudget=+this.value;autoSelectByBudget();render()">
       </div>
     </div>
     
@@ -1206,6 +1211,19 @@ function renderSelection(app){
     </div>
     ${hasMore ? `<div style="text-align:center;padding:12px;color:var(--text2);font-size:12px">Показано ${showLimit} из ${filtered.length} · Используйте фильтры для уточнения</div>` : ''}
   `;
+}
+
+function autoSelectByBudget(){
+  if(selBudget >= 10000000) return; // unlimited
+  selSelected.clear();
+  const filtered = getFilteredPabliki();
+  let total = 0;
+  for(const p of filtered){
+    if(total + p.p <= selBudget){
+      selSelected.add(p.ig);
+      total += p.p;
+    }
+  }
 }
 
 function toggleSel(ig){
