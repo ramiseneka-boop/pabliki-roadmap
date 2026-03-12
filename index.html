@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<title>Pabliki Growth — Roadmap</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg1:#0B0D17;--bg2:#111428;--bg3:#0D1117;
+  --card:linear-gradient(145deg,#161B2E,#1C2333);
+  --card-solid:#161B2E;
+  --border:rgba(255,255,255,0.07);
+  --gold1:#C9A44C;--gold2:#E8D07E;
+  --green:#2DD4A8;--red:#FF6B6B;--blue:#60A5FA;--purple:#A78BFA;--orange:#FB923C;
+  --text:#E8E8F0;--text2:#7B8394;--text3:#4A5068;
+  --radius:16px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg1);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%);padding:0;overflow-x:hidden;padding-top:var(--safe-top);padding-bottom:calc(80px + var(--safe-bottom))}
+body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");background-size:128px;pointer-events:none;z-index:0;opacity:.5}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(201,164,76,.2);border-radius:2px}
+
+.container{max-width:520px;margin:0 auto;padding:16px;position:relative;z-index:1}
+
+/* HEADER */
+.header{text-align:center;padding:24px 0 8px}
+.header h1{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--gold1),var(--gold2),var(--gold1));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px}
+.header p{color:var(--text2);font-size:13px;margin-top:4px}
+
+/* PROGRESS BAR */
+.progress-section{margin:20px 0}
+.progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.progress-header span{font-size:13px;color:var(--text2)}
+.progress-header strong{font-size:24px;font-weight:800;color:var(--green)}
+.progress-bar{height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold1));border-radius:4px;transition:width 0.6s ease}
+
+/* STATS ROW */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
+.stat .num{font-size:22px;font-weight:800}
+.stat .label{font-size:10px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+.stat.green .num{color:var(--green)}
+.stat.orange .num{color:var(--orange)}
+.stat.blue .num{color:var(--blue)}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin:20px 0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;background:rgba(255,255,255,0.04);color:var(--text2);border:1px solid transparent;white-space:nowrap}
+.tab.active{background:linear-gradient(135deg,rgba(201,164,76,0.15),rgba(232,208,126,0.1));color:var(--gold2);border-color:rgba(201,164,76,0.3)}
+
+/* PHASE CARD */
+.phase{margin-bottom:20px;animation:fadeIn .4s ease}
+.phase-header{display:flex;align-items:center;gap:12px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;cursor:pointer;transition:all .3s}
+.phase-header:active{transform:scale(0.99)}
+.phase-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.phase-info{flex:1;min-width:0}
+.phase-info h3{font-size:15px;font-weight:700;margin-bottom:2px}
+.phase-info .meta{font-size:11px;color:var(--text2)}
+.phase-progress{font-size:14px;font-weight:700;flex-shrink:0}
+.phase-chevron{color:var(--text3);transition:transform .3s;flex-shrink:0}
+.phase.open .phase-chevron{transform:rotate(180deg)}
+
+.phase-body{background:var(--card-solid);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;max-height:0;transition:max-height .4s ease;padding:0 16px}
+.phase.open .phase-body{max-height:5000px;padding:8px 16px 16px}
+
+/* TASK ITEM */
+.task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);transition:opacity .3s}
+.task:last-child{border-bottom:none}
+.task.done{opacity:0.5}
+.task-check{width:24px;height:24px;border-radius:8px;border:2px solid var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .3s;margin-top:1px}
+.task-check:active{transform:scale(0.9)}
+.task.done .task-check{background:var(--green);border-color:var(--green)}
+.task.done .task-check::after{content:'✓';color:#fff;font-size:14px;font-weight:700}
+.task-content{flex:1;min-width:0}
+.task-title{font-size:14px;font-weight:500;line-height:1.4}
+.task.done .task-title{text-decoration:line-through;color:var(--text2)}
+.task-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4}
+.task-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.tag.priority-high{background:rgba(255,107,107,0.15);color:var(--red)}
+.tag.priority-med{background:rgba(251,146,60,0.15);color:var(--orange)}
+.tag.priority-low{background:rgba(96,165,250,0.15);color:var(--blue)}
+.tag.type-seo{background:rgba(45,212,168,0.15);color:var(--green)}
+.tag.type-sales{background:rgba(201,164,76,0.15);color:var(--gold2)}
+.tag.type-product{background:rgba(167,139,250,0.15);color:var(--purple)}
+.tag.type-marketing{background:rgba(96,165,250,0.15);color:var(--blue)}
+.tag.type-team{background:rgba(251,146,60,0.15);color:var(--orange)}
+
+/* TASK DELETE */
+.task-delete{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:16px;transition:all .2s;flex-shrink:0;opacity:0}
+.task:hover .task-delete,.task:active .task-delete{opacity:1}
+.task-delete:hover{color:var(--red);background:rgba(255,107,107,0.1)}
+
+/* ADD TASK */
+.add-task-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;margin-top:8px;border-radius:12px;border:1px dashed rgba(255,255,255,0.1);background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .3s;font-family:inherit}
+.add-task-btn:hover{border-color:rgba(201,164,76,0.3);color:var(--gold2)}
+
+/* ADD FORM */
+.add-form{display:none;margin-top:8px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid var(--border)}
+.add-form.show{display:block;animation:fadeIn .3s ease}
+.add-form input,.add-form textarea,.add-form select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:8px;outline:none;transition:border-color .3s}
+.add-form input:focus,.add-form textarea:focus{border-color:rgba(201,164,76,0.4)}
+.add-form textarea{resize:none;height:60px}
+.add-form select{appearance:none;-webkit-appearance:none}
+.form-row{display:flex;gap:8px}
+.form-row>*{flex:1}
+.btn{padding:10px 16px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .3s}
+.btn-gold{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#0B0D17}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(11,13,23,0.95),#0B0D17);border-top:1px solid var(--border);display:flex;justify-content:center;gap:32px;padding:10px 0 calc(10px + var(--safe-bottom));z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;transition:all .3s;opacity:0.5}
+.nav-item.active{opacity:1}
+.nav-item .icon{font-size:22px}
+.nav-item .label{font-size:10px;font-weight:600}
+.nav-item.active .label{color:var(--gold2)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:linear-gradient(180deg,#1C2333,#161B2E);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;padding:24px 20px calc(20px + var(--safe-bottom));animation:slideUp .3s ease}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:16px}
+
+/* FINANCE VIEW */
+.finance-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+.finance-card h4{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.finance-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.finance-row:last-child{border-bottom:none}
+.finance-row .label{color:var(--text2);font-size:13px}
+.finance-row .value{font-weight:700;font-size:14px}
+.finance-row .value.green{color:var(--green)}
+.finance-row .value.red{color:var(--red)}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card-solid);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;background:#0B0D17;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease}
+@keyframes pulseGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div style="font-size:60px;animation:pulseGlow 1.5s ease infinite">🚀</div>
+  <div style="margin-top:16px;font-size:28px;font-weight:900;background:linear-gradient(135deg,#C9A44C,#E8D07E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;animation:fadeIn .6s ease .3s forwards">PABLIKI</div>
+  <div style="margin-top:4px;font-size:13px;color:#7B8394;opacity:0;animation:fadeIn .6s ease .6s forwards">Growth Roadmap</div>
+</div>
+
+<div class="container" id="app"></div>
+
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchView('roadmap')"><span class="icon">🗺️</span><span class="label">Roadmap</span></div>
+  <div class="nav-item" onclick="switchView('finance')"><span class="icon">💰</span><span class="label">Экономика</span></div>
+  <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== DATA =====================
+const DEFAULT_PHASES = [
+  {
+    id:'p1',name:'ФУНДАМЕНТ',icon:'🏗️',color:'#2DD4A8',months:'Месяц 1-2',
+    tasks:[
+      {id:'t1',title:'Новое позиционирование: «Городская медиасеть»',desc:'Обновить тексты на сайте, КП, презентациях. Pabliki = билборды в лентах.',tags:['priority-high','type-marketing'],done:false},
+      {id:'t2',title:'Починить robots.txt',desc:'Заменить your-production-domain.com на pabliki.kz',tags:['priority-high','type-seo'],done:false},
+      {id:'t3',title:'Исправить <h1> на главной',desc:'Главный заголовок должен быть h1, не h2',tags:['priority-high','type-seo'],done:false},
+      {id:'t4',title:'Добавить canonical теги',desc:'<link rel="canonical"> на каждую страницу',tags:['priority-high','type-seo'],done:false},
+      {id:'t5',title:'JSON-LD разметка',desc:'Organization + LocalBusiness + FAQ schema',tags:['priority-med','type-seo'],done:false},
+      {id:'t6',title:'Уникальные meta description',desc:'Для каждой страницы — свой description',tags:['priority-med','type-seo'],done:false},
+      {id:'t7',title:'301 редиректы вместо 307',desc:'Постоянные редиректы для передачи SEO-веса',tags:['priority-med','type-seo'],done:false},
+      {id:'t8',title:'Программа «Первая сотня»',desc:'20 бесплатных размещений для узнаваемых брендов → кейсы + отзывы',tags:['priority-high','type-marketing'],done:false},
+      {id:'t9',title:'Калькулятор рекламной кампании',desc:'Город + ниша + бюджет → готовый медиаплан с прогнозом охвата',tags:['priority-high','type-product'],done:false},
+      {id:'t10',title:'Нанять 1 SDR',desc:'50 холодных касаний/день. Персональный разбор рекламы клиента.',tags:['priority-high','type-team'],done:false},
+      {id:'t11',title:'Обновить ценовую политику',desc:'Минимальная наценка 80% на крупные, 100% на средние паблики',tags:['priority-high','type-sales'],done:false},
+      {id:'t12',title:'Зарегистрировать товарный знак',desc:'Через IP Guard — защита бренда Pabliki',tags:['priority-med','type-sales'],done:false},
+      {id:'t13',title:'Hero CTA на сайте',desc:'Большая кнопка «Собрать подборку бесплатно» на первом экране',tags:['priority-high','type-product'],done:false},
+      {id:'t14',title:'Цифры на первом экране',desc:'700+ пабликов • 14 регионов • 93M+ охвата — социальное доказательство',tags:['priority-med','type-marketing'],done:false},
+      {id:'t15',title:'Пакетное ценообразование',desc:'Город (500К) / Регион (1М) / Казахстан (2.5М) + аддоны',tags:['priority-high','type-sales'],done:false},
+    ]
+  },
+  {
+    id:'p2',name:'РАЗГОН',icon:'🚀',color:'#60A5FA',months:'Месяц 3-4',
+    tasks:[
+      {id:'t20',title:'10 SEO-статей',desc:'«Реклама в Алматы цены», «Продвижение бизнеса в Шымкенте» и т.д.',tags:['priority-high','type-seo'],done:false},
+      {id:'t21',title:'5 видео-кейсов',desc:'YouTube + Reels: сравнение с билбордами, разборы результатов',tags:['priority-high','type-marketing'],done:false},
+      {id:'t22',title:'Партнёрская программа для агентств',desc:'20% комиссия, white-label кабинет, готовые медиапланы. Цель: 50 агентств.',tags:['priority-high','type-sales'],done:false},
+      {id:'t23',title:'«Индекс городского охвата»',desc:'Инструмент: «Ваш бренд видят только 12% жителей». Создаёт FOMO.',tags:['priority-med','type-product'],done:false},
+      {id:'t24',title:'Telegram-бот для МСБ',desc:'Ниша + город + бюджет → подборка → оплата. Быстрый вход для малых чеков.',tags:['priority-med','type-product'],done:false},
+      {id:'t25',title:'Фрейминг «3 обязательных канала»',desc:'Таргет + Контекст + Городские паблики. Повторять во всех материалах.',tags:['priority-high','type-marketing'],done:false},
+      {id:'t26',title:'Автоматический отчёт после кампании',desc:'PDF через 7 дней: охват, вовлечённость, бенчмарки, рекомендация на повтор.',tags:['priority-med','type-product'],done:false},
+      {id:'t27',title:'Система рейтингов пабликов',desc:'Звёзды, отзывы рекламодателей, средний охват — как Booking.',tags:['priority-low','type-product'],done:false},
+      {id:'t28',title:'Мастер-класс для медиапланеров',desc:'Бесплатный вебинар для агентств: «Как включить паблики в медиамикс»',tags:['priority-med','type-sales'],done:false},
+      {id:'t29',title:'Партнёрство с Astana Hub / MOST Hub',desc:'Бесплатные пилоты для стартапов → конвертация в платных клиентов',tags:['priority-low','type-sales'],done:false},
+      {id:'t30',title:'20-30 платных заказов',desc:'Целевой KPI на конец 4-го месяца',tags:['priority-high','type-sales'],done:false},
+    ]
+  },
+  {
+    id:'p3',name:'МАСШТАБИРОВАНИЕ',icon:'📈',color:'#A78BFA',months:'Месяц 5-6',
+    tasks:[
+      {id:'t40',title:'30 SEO-статей (итого)',desc:'Органика начинает давать стабильный поток лидов',tags:['priority-high','type-seo'],done:false},
+      {id:'t41',title:'20+ агентств-партнёров',desc:'Каждое агентство = 5-10 заказов/мес',tags:['priority-high','type-sales'],done:false},
+      {id:'t42',title:'Нанять 2-го SDR + AE',desc:'SDR: поиск. AE: закрытие сделок и презентации.',tags:['priority-high','type-team'],done:false},
+      {id:'t43',title:'Годовые контракты',desc:'12 размещений, скидка 25%. Предсказуемая выручка.',tags:['priority-high','type-sales'],done:false},
+      {id:'t44',title:'A/B тестирование креативов',desc:'2 варианта → разные паблики → аналитика. Фича уровня Facebook Ads.',tags:['priority-med','type-product'],done:false},
+      {id:'t45',title:'API для агентств',desc:'Интеграция в процессы партнёров. API + документация + webhooks.',tags:['priority-med','type-product'],done:false},
+      {id:'t46',title:'Выступление Digital Bridge',desc:'Тема: «Почему 80% рекламных бюджетов сливаются на билборды»',tags:['priority-med','type-marketing'],done:false},
+      {id:'t47',title:'Forbes Kazakhstan — колонка',desc:'«Городская реклама: новый обязательный канал для бизнеса в КЗ»',tags:['priority-med','type-marketing'],done:false},
+      {id:'t48',title:'Программа лояльности',desc:'3+ размещения → -10%, 6+ → -15% + приоритет, 12+ → VIP',tags:['priority-med','type-sales'],done:false},
+      {id:'t49',title:'50-70 заказов/мес',desc:'Целевой KPI на конец 6-го месяца',tags:['priority-high','type-sales'],done:false},
+    ]
+  },
+  {
+    id:'p4',name:'ДОМИНАЦИЯ',icon:'👑',color:'#E8D07E',months:'Месяц 7-12',
+    tasks:[
+      {id:'t60',title:'Доминация в HoReCa Алматы',desc:'50+ ресторанов используют Pabliki → стандарт отрасли',tags:['priority-high','type-sales'],done:false},
+      {id:'t61',title:'Экспансия по нишам',desc:'Стоматологии → фитнес → авто → застройщики. Ниша за нишей.',tags:['priority-high','type-sales'],done:false},
+      {id:'t62',title:'Ежеквартальный рейтинг городов',desc:'«Рейтинг рекламной активности городов КЗ» — PR через данные.',tags:['priority-med','type-marketing'],done:false},
+      {id:'t63',title:'Партнёрство с банками',desc:'Kaspi, Halyk: «Реклама в подарок при открытии бизнес-счёта»',tags:['priority-med','type-sales'],done:false},
+      {id:'t64',title:'AM для аккаунтов',desc:'Нанять Account Manager: ведение клиентов, upsell, retention.',tags:['priority-high','type-team'],done:false},
+      {id:'t65',title:'White-label для агентств',desc:'Агентства заходят под своим брендом. Полная интеграция.',tags:['priority-med','type-product'],done:false},
+      {id:'t66',title:'Срочное размещение (24ч)',desc:'Наценка +20%. Для мероприятий, запусков, акций.',tags:['priority-low','type-product'],done:false},
+      {id:'t67',title:'100 заказов × 1М₸/мес',desc:'40 входящих + 30 партнёры + 20 outbound + 10 повторные = 100',tags:['priority-high','type-sales'],done:false},
+    ]
+  }
+];
+
+// ===================== STATE =====================
+let state = loadState();
+let currentView = 'roadmap';
+let currentFilter = 'all';
+
+function loadState(){
+  try{
+    const s = localStorage.getItem('pabliki_roadmap_v2');
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  return {phases: JSON.parse(JSON.stringify(DEFAULT_PHASES)), customTasks:[], version:2};
+}
+
+function saveState(){
+  localStorage.setItem('pabliki_roadmap_v2', JSON.stringify(state));
+}
+
+// ===================== RENDER =====================
+function render(){
+  const app = document.getElementById('app');
+  if(currentView === 'roadmap') renderRoadmap(app);
+  else if(currentView === 'finance') renderFinance(app);
+  else renderSettings(app);
+  updateNav();
+}
+
+function renderRoadmap(app){
+  const allTasks = getAllTasks();
+  const filtered = currentFilter === 'all' ? allTasks : allTasks.filter(t => t.tags && t.tags.some(tag => tag === 'type-'+currentFilter));
+  const done = filtered.filter(t=>t.done).length;
+  const total = filtered.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const pending = allTasks.filter(t=>!t.done).length;
+  const completed = allTasks.filter(t=>t.done).length;
+
+  let html = `
+    <div class="header">
+      <h1>PABLIKI GROWTH</h1>
+      <p>Roadmap → 100 заказов × 1 000 000₸</p>
+    </div>
+    <div class="progress-section">
+      <div class="progress-header">
+        <span>Общий прогресс</span>
+        <strong>${pct}%</strong>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="stats">
+      <div class="stat green"><div class="num">${completed}</div><div class="label">Выполнено</div></div>
+      <div class="stat orange"><div class="num">${pending}</div><div class="label">Осталось</div></div>
+      <div class="stat blue"><div class="num">${allTasks.length}</div><div class="label">Всего</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab ${currentFilter==='all'?'active':''}" onclick="setFilter('all')">Все</div>
+      <div class="tab ${currentFilter==='seo'?'active':''}" onclick="setFilter('seo')">SEO</div>
+      <div class="tab ${currentFilter==='sales'?'active':''}" onclick="setFilter('sales')">Продажи</div>
+      <div class="tab ${currentFilter==='marketing'?'active':''}" onclick="setFilter('marketing')">Маркетинг</div>
+      <div class="tab ${currentFilter==='product'?'active':''}" onclick="setFilter('product')">Продукт</div>
+      <div class="tab ${currentFilter==='team'?'active':''}" onclick="setFilter('team')">Команда</div>
+    </div>
+  `;
+
+  state.phases.forEach(phase => {
+    const phaseTasks = currentFilter === 'all' ? phase.tasks : phase.tasks.filter(t => t.tags && t.tags.some(tag => tag === 'type-'+currentFilter));
+    if(phaseTasks.length === 0) return;
+    const pd = phaseTasks.filter(t=>t.done).length;
+    const pt = phaseTasks.length;
+    const isOpen = phase._open !== false;
+    html += `
+      <div class="phase ${isOpen?'open':''}">
+        <div class="phase-header" onclick="togglePhase('${phase.id}')">
+          <div class="phase-icon" style="background:${phase.color}22">${phase.icon}</div>
+          <div class="phase-info">
+            <h3>${phase.name}</h3>
+            <div class="meta">${phase.months} • ${pd}/${pt} задач</div>
+          </div>
+          <div class="phase-progress" style="color:${phase.color}">${Math.round(pd/pt*100)}%</div>
+          <div class="phase-chevron">▼</div>
+        </div>
+        <div class="phase-body">
+          ${phaseTasks.map(t => renderTask(t, phase.id)).join('')}
+          <button class="add-task-btn" onclick="showAddForm('${phase.id}')">+ Добавить задачу</button>
+          <div class="add-form" id="form-${phase.id}">
+            <input type="text" id="input-title-${phase.id}" placeholder="Название задачи">
+            <textarea id="input-desc-${phase.id}" placeholder="Описание (опционально)"></textarea>
+            <div class="form-row">
+              <select id="input-priority-${phase.id}">
+                <option value="priority-high">🔴 Высокий</option>
+                <option value="priority-med">🟡 Средний</option>
+                <option value="priority-low">🔵 Низкий</option>
+              </select>
+              <select id="input-type-${phase.id}">
+                <option value="type-sales">💰 Продажи</option>
+                <option value="type-marketing">📣 Маркетинг</option>
+                <option value="type-seo">🔍 SEO</option>
+                <option value="type-product">⚡ Продукт</option>
+                <option value="type-team">👥 Команда</option>
+              </select>
+            </div>
+            <div class="form-row" style="margin-top:4px">
+              <button class="btn btn-gold" onclick="addTask('${phase.id}')">Добавить</button>
+              <button class="btn btn-ghost" onclick="hideAddForm('${phase.id}')">Отмена</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  app.innerHTML = html;
+}
+
+function renderTask(t, phaseId){
+  const tagsHtml = (t.tags||[]).map(tag => {
+    const labels = {'priority-high':'Высокий','priority-med':'Средний','priority-low':'Низкий','type-seo':'SEO','type-sales':'Продажи','type-product':'Продукт','type-marketing':'Маркетинг','type-team':'Команда'};
+    return `<span class="tag ${tag}">${labels[tag]||tag}</span>`;
+  }).join('');
+  return `
+    <div class="task ${t.done?'done':''}">
+      <div class="task-check" onclick="toggleTask('${phaseId}','${t.id}')"></div>
+      <div class="task-content">
+        <div class="task-title">${t.title}</div>
+        ${t.desc ? `<div class="task-desc">${t.desc}</div>` : ''}
+        <div class="task-tags">${tagsHtml}</div>
+      </div>
+      <div class="task-delete" onclick="deleteTask('${phaseId}','${t.id}')">✕</div>
+    </div>
+  `;
+}
+
+function renderFinance(app){
+  app.innerHTML = `
+    <div class="header">
+      <h1>ЭКОНОМИКА</h1>
+      <p>Юнит-экономика Pabliki.kz</p>
+    </div>
+    <div class="finance-card">
+      <h4>📊 База пабликов</h4>
+      <div class="finance-row"><span class="label">Пабликов</span><span class="value">826</span></div>
+      <div class="finance-row"><span class="label">Средняя себестоимость</span><span class="value">47 983₸</span></div>
+      <div class="finance-row"><span class="label">Средняя цена клиенту</span><span class="value">105 068₸</span></div>
+      <div class="finance-row"><span class="label">Средняя маржа</span><span class="value green">54.3%</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>🎯 Цель: 100 заказов × 1М₸</h4>
+      <div class="finance-row"><span class="label">Выручка</span><span class="value">100 000 000₸</span></div>
+      <div class="finance-row"><span class="label">Себестоимость</span><span class="value red">−47 983 000₸</span></div>
+      <div class="finance-row"><span class="label">Налог ИП 10%</span><span class="value red">−10 000 000₸</span></div>
+      <div class="finance-row"><span class="label">Оператор (фикс)</span><span class="value red">−500 000₸</span></div>
+      <div class="finance-row"><span class="label">Соц отчисления</span><span class="value red">−80 000₸</span></div>
+      <div class="finance-row" style="border-top:2px solid rgba(255,255,255,0.1);padding-top:12px;margin-top:4px">
+        <span class="label" style="font-weight:700;color:var(--text)">Чистая прибыль</span>
+        <span class="value green" style="font-size:18px">41 437 000₸</span>
+      </div>
+      <div class="finance-row"><span class="label">Маржинальность</span><span class="value green">41.4%</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>📦 Пакеты</h4>
+      <div class="finance-row"><span class="label">🏙️ Город (10-15 пабликов)</span><span class="value">300-500К₸</span></div>
+      <div class="finance-row"><span class="label">🌆 Регион (3-5 городов)</span><span class="value" style="color:var(--gold2)">800К-1.2М₸</span></div>
+      <div class="finance-row"><span class="label">🇰🇿 Казахстан (все)</span><span class="value">2-3М₸</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>⚖️ Точка безубыточности</h4>
+      <div class="finance-row"><span class="label">Фикс расходы/мес</span><span class="value">580 000₸</span></div>
+      <div class="finance-row"><span class="label">Маржа с 1 заказа</span><span class="value">420 170₸</span></div>
+      <div class="finance-row"><span class="label">Безубыточность</span><span class="value green">2 заказа/мес</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>🏆 Сценарии (100 заказов)</h4>
+      <div class="finance-row"><span class="label">Все прямые</span><span class="value green">41.4М₸ (41%)</span></div>
+      <div class="finance-row"><span class="label">70 прямых + 30 агентских</span><span class="value green">36.9М₸ (37%)</span></div>
+      <div class="finance-row"><span class="label">С командой (4 чел)</span><span class="value green">35.5М₸ (36%)</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>💡 Самые маржинальные города</h4>
+      <div class="finance-row"><span class="label">Кызылорда</span><span class="value green">68.5%</span></div>
+      <div class="finance-row"><span class="label">Тараз</span><span class="value green">64.1%</span></div>
+      <div class="finance-row"><span class="label">Актобе</span><span class="value green">59.4%</span></div>
+      <div class="finance-row"><span class="label">Караганда</span><span class="value green">58.3%</span></div>
+      <div class="finance-row"><span class="label">Петропавловск</span><span class="value green">56.8%</span></div>
+    </div>
+  `;
+}
+
+function renderSettings(app){
+  const allTasks = getAllTasks();
+  const done = allTasks.filter(t=>t.done).length;
+  app.innerHTML = `
+    <div class="header">
+      <h1>НАСТРОЙКИ</h1>
+      <p>Управление данными</p>
+    </div>
+    <div class="finance-card">
+      <h4>📊 Статистика</h4>
+      <div class="finance-row"><span class="label">Всего задач</span><span class="value">${allTasks.length}</span></div>
+      <div class="finance-row"><span class="label">Выполнено</span><span class="value green">${done}</span></div>
+      <div class="finance-row"><span class="label">Осталось</span><span class="value" style="color:var(--orange)">${allTasks.length - done}</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>💾 Данные</h4>
+      <button class="btn btn-gold" style="width:100%;margin-bottom:8px" onclick="exportData()">📥 Экспорт (JSON)</button>
+      <label class="btn btn-ghost" style="width:100%;display:block;text-align:center;margin-bottom:8px;cursor:pointer">
+        📤 Импорт
+        <input type="file" accept=".json" style="display:none" onchange="importData(event)">
+      </label>
+      <button class="btn btn-ghost" style="width:100%;color:var(--red);border-color:rgba(255,107,107,0.3)" onclick="resetData()">🗑 Сбросить всё</button>
+    </div>
+    <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">
+      Pabliki Growth Roadmap v1.0<br>
+      Создано Викторией для Рами 💫
+    </div>
+  `;
+}
+
+// ===================== ACTIONS =====================
+function getAllTasks(){
+  let all = [];
+  state.phases.forEach(p => all.push(...p.tasks));
+  return all;
+}
+
+function togglePhase(id){
+  const phase = state.phases.find(p=>p.id===id);
+  if(phase) phase._open = phase._open === false ? true : false;
+  saveState(); render();
+}
+
+function toggleTask(phaseId, taskId){
+  const phase = state.phases.find(p=>p.id===phaseId);
+  if(!phase) return;
+  const task = phase.tasks.find(t=>t.id===taskId);
+  if(!task) return;
+  task.done = !task.done;
+  saveState(); render();
+  if(task.done) showToast('✅ Выполнено!');
+}
+
+function deleteTask(phaseId, taskId){
+  if(!confirm('Удалить задачу?')) return;
+  const phase = state.phases.find(p=>p.id===phaseId);
+  if(!phase) return;
+  phase.tasks = phase.tasks.filter(t=>t.id!==taskId);
+  saveState(); render();
+  showToast('🗑 Удалено');
+}
+
+function showAddForm(phaseId){
+  document.getElementById('form-'+phaseId).classList.add('show');
+}
+function hideAddForm(phaseId){
+  document.getElementById('form-'+phaseId).classList.remove('show');
+}
+
+function addTask(phaseId){
+  const title = document.getElementById('input-title-'+phaseId).value.trim();
+  if(!title){showToast('Введите название');return;}
+  const desc = document.getElementById('input-desc-'+phaseId).value.trim();
+  const priority = document.getElementById('input-priority-'+phaseId).value;
+  const type = document.getElementById('input-type-'+phaseId).value;
+  const phase = state.phases.find(p=>p.id===phaseId);
+  if(!phase) return;
+  phase.tasks.push({
+    id: 'c'+Date.now(),
+    title, desc,
+    tags: [priority, type],
+    done: false
+  });
+  saveState(); render();
+  showToast('✅ Задача добавлена');
+}
+
+function setFilter(f){
+  currentFilter = f;
+  render();
+}
+
+function switchView(view){
+  currentView = view;
+  render();
+  window.scrollTo(0,0);
+}
+
+function updateNav(){
+  document.querySelectorAll('.nav-item').forEach((el,i) => {
+    const views = ['roadmap','finance','settings'];
+    el.classList.toggle('active', views[i]===currentView);
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+function closeModal(e){
+  if(e.target.id==='modalOverlay') document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// ===================== DATA MANAGEMENT =====================
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `pabliki-roadmap-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('📥 Экспорт сохранён');
+}
+
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      state = JSON.parse(ev.target.result);
+      saveState(); render();
+      showToast('📤 Импорт выполнен');
+    }catch(err){
+      showToast('❌ Ошибка файла');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetData(){
+  if(!confirm('Сбросить все данные? Прогресс будет потерян.')) return;
+  if(!confirm('Точно уверен?')) return;
+  state = {phases: JSON.parse(JSON.stringify(DEFAULT_PHASES)), customTasks:[], version:2};
+  saveState(); render();
+  showToast('🗑 Данные сброшены');
+}
+
+// ===================== INIT =====================
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const s = document.getElementById('splash');
+    if(s){s.style.opacity='0'; setTimeout(()=>s.remove(), 600);}
+  }, 1500);
+  render();
+});
+</script>
+</body>
+</html>
