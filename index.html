@@ -890,51 +890,189 @@ function renderTask(t, phaseId){
   `;
 }
 
+// Затраты на реализацию задач: {id: {name, cost, type: 'once'|'monthly', category}}
+const TASK_COSTS = {
+  // ФУНДАМЕНТ
+  t1:  {name:'Позиционирование (тексты, КП)', cost:0, type:'once', cat:'Маркетинг', note:'Виктория'},
+  t2:  {name:'Починить robots.txt', cost:0, type:'once', cat:'SEO', note:'2 мин, бесплатно'},
+  t3:  {name:'Исправить h1', cost:0, type:'once', cat:'SEO', note:'бесплатно'},
+  t4:  {name:'Canonical теги', cost:0, type:'once', cat:'SEO', note:'бесплатно'},
+  t5:  {name:'JSON-LD разметка', cost:0, type:'once', cat:'SEO', note:'Виктория'},
+  t6:  {name:'Meta descriptions', cost:0, type:'once', cat:'SEO', note:'Виктория'},
+  t7:  {name:'301 редиректы', cost:0, type:'once', cat:'SEO', note:'бесплатно'},
+  t8:  {name:'Программа «Первая сотня»', cost:2500000, type:'once', cat:'Маркетинг', note:'себестоимость 20 размещений'},
+  t9:  {name:'Калькулятор на сайте', cost:300000, type:'once', cat:'Продукт', note:'разработка'},
+  t10: {name:'SDR #1 (зарплата)', cost:300000, type:'monthly', cat:'Команда', note:'фикс + % от сделок'},
+  t11: {name:'Обновить ценовую политику', cost:0, type:'once', cat:'Продажи', note:'Виктория'},
+  t12: {name:'Товарный знак', cost:180000, type:'once', cat:'Юр. расходы', note:'IP Guard, 12-14 мес'},
+  t13: {name:'Hero CTA на сайте', cost:0, type:'once', cat:'Продукт', note:'бесплатно'},
+  t14: {name:'Цифры на первом экране', cost:0, type:'once', cat:'Продукт', note:'бесплатно'},
+  t15: {name:'Пакетное ценообразование', cost:0, type:'once', cat:'Продажи', note:'Виктория'},
+  // РАЗГОН
+  t20: {name:'10 SEO-статей', cost:300000, type:'once', cat:'SEO', note:'копирайтер/AI + доработка'},
+  t21: {name:'5 видео-кейсов', cost:500000, type:'once', cat:'Маркетинг', note:'съёмка + монтаж'},
+  t22: {name:'Партнёрская программа', cost:0, type:'once', cat:'Продажи', note:'Виктория — готово ✅'},
+  t23: {name:'Индекс городского охвата', cost:200000, type:'once', cat:'Продукт', note:'разработка'},
+  t24: {name:'Telegram-бот для МСБ', cost:250000, type:'once', cat:'Продукт', note:'разработка'},
+  t25: {name:'Фрейминг «3 канала»', cost:0, type:'once', cat:'Маркетинг', note:'Виктория'},
+  t26: {name:'Автоотчёт после кампании', cost:200000, type:'once', cat:'Продукт', note:'разработка'},
+  t27: {name:'Система рейтингов', cost:300000, type:'once', cat:'Продукт', note:'разработка'},
+  t28: {name:'Мастер-класс для агентств', cost:50000, type:'once', cat:'Маркетинг', note:'организация вебинара'},
+  t29: {name:'Partnership Astana Hub', cost:0, type:'once', cat:'Маркетинг', note:'бесплатно'},
+  t30: {name:'KPI: 20-30 заказов', cost:0, type:'once', cat:'KPI', note:'цель'},
+  // МАСШТАБИРОВАНИЕ
+  t40: {name:'30 SEO-статей (итого)', cost:600000, type:'once', cat:'SEO', note:'ещё 20 статей'},
+  t41: {name:'20+ агентств', cost:0, type:'once', cat:'Продажи', note:'органический рост'},
+  t42: {name:'SDR #2 + AE', cost:700000, type:'monthly', cat:'Команда', note:'2 человека'},
+  t43: {name:'Годовые контракты', cost:0, type:'once', cat:'Продажи', note:'скидка 25%'},
+  t44: {name:'A/B тестирование', cost:400000, type:'once', cat:'Продукт', note:'разработка'},
+  t45: {name:'API для агентств', cost:500000, type:'once', cat:'Продукт', note:'разработка + документация'},
+  t46: {name:'Digital Bridge выступление', cost:150000, type:'once', cat:'Маркетинг', note:'участие + подготовка'},
+  t47: {name:'Forbes Kazakhstan колонка', cost:200000, type:'once', cat:'Маркетинг', note:'PR + написание'},
+  t48: {name:'Программа лояльности', cost:0, type:'once', cat:'Продажи', note:'бесплатно'},
+  t49: {name:'KPI: 50-70 заказов', cost:0, type:'once', cat:'KPI', note:'цель'},
+  // ДОМИНАЦИЯ
+  t60: {name:'Доминация HoReCa Алматы', cost:500000, type:'once', cat:'Маркетинг', note:'пилоты + активации'},
+  t61: {name:'Экспансия по нишам', cost:0, type:'once', cat:'Продажи', note:'SDR работа'},
+  t62: {name:'Квартальный рейтинг городов', cost:100000, type:'once', cat:'Маркетинг', note:'аналитика + дизайн'},
+  t63: {name:'Партнёрство с банками', cost:0, type:'once', cat:'Продажи', note:'переговоры'},
+  t64: {name:'Account Manager', cost:400000, type:'monthly', cat:'Команда', note:'зарплата'},
+  t65: {name:'White-label для агентств', cost:600000, type:'once', cat:'Продукт', note:'разработка'},
+  t66: {name:'Срочное размещение', cost:0, type:'once', cat:'Продукт', note:'бесплатно'},
+  t67: {name:'KPI: 100 заказов', cost:0, type:'once', cat:'KPI', note:'цель'},
+};
+
 function renderFinance(app){
+  const fmt = n => n.toLocaleString('ru-RU');
+  const allTasks = getAllTasks();
+  
+  // Calculate costs from TASK_COSTS + custom tasks
+  let totalOnce = 0, totalMonthly = 0;
+  const costsByPhase = {'p1':[], 'p2':[], 'p3':[], 'p4':[]};
+  const costsByCat = {};
+  
+  // Known tasks
+  for(const [id, c] of Object.entries(TASK_COSTS)){
+    if(c.cost > 0){
+      if(c.type === 'once') totalOnce += c.cost;
+      else totalMonthly += c.cost;
+      
+      const phase = id.startsWith('t6') ? 'p4' : id.startsWith('t4') ? 'p3' : id.startsWith('t2') || id.startsWith('t3') ? 'p2' : 'p1';
+      if(!costsByPhase[phase]) costsByPhase[phase] = [];
+      costsByPhase[phase].push(c);
+      
+      if(!costsByCat[c.cat]) costsByCat[c.cat] = 0;
+      costsByCat[c.cat] += c.type === 'monthly' ? c.cost * 12 : c.cost;
+    }
+  }
+  
+  // Custom tasks (user-added) — count if they have cost in title like "(500K)"
+  const customTasks = allTasks.filter(t => !TASK_COSTS[t.id] && t.title);
+  let customCost = 0;
+  customTasks.forEach(t => {
+    const m = t.title.match(/(\d[\d\s]*)\s*[кКkK₸]/);
+    if(m){
+      const val = parseInt(m[1].replace(/\s/g,'')) * (m[0].toLowerCase().includes('к') || m[0].toLowerCase().includes('k') ? 1000 : 1);
+      customCost += val;
+    }
+  });
+  
+  const totalAnnual = totalOnce + totalMonthly * 12;
+  const phaseNames = {p1:'🏗️ Фундамент (мес 1-2)', p2:'🚀 Разгон (мес 3-4)', p3:'📈 Масштабирование (мес 5-6)', p4:'👑 Доминация (мес 7-12)'};
+  
+  // Phase cost rows
+  let phaseCards = '';
+  for(const [pid, costs] of Object.entries(costsByPhase)){
+    if(!costs.length) continue;
+    const phaseTotal = costs.reduce((s,c) => s + (c.type === 'monthly' ? c.cost : c.cost), 0);
+    const rows = costs.map(c => 
+      `<div class="finance-row"><span class="label">${c.name} <span style="color:var(--text3);font-size:10px">${c.note}</span></span><span class="value${c.type==='monthly'?' red':''}">${c.type==='monthly'?fmt(c.cost)+'₸/мес':fmt(c.cost)+'₸'}</span></div>`
+    ).join('');
+    phaseCards += `
+    <div class="finance-card">
+      <h4>${phaseNames[pid]}</h4>
+      ${rows}
+      <div class="finance-row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+        <span class="label" style="font-weight:700">Итого фаза</span>
+        <span class="value" style="font-weight:700">${fmt(phaseTotal)}₸</span>
+      </div>
+    </div>`;
+  }
+  
+  // Category summary
+  const catRows = Object.entries(costsByCat).sort((a,b)=>b[1]-a[1]).map(([cat,cost]) =>
+    `<div class="finance-row"><span class="label">${cat}</span><span class="value">${fmt(cost)}₸</span></div>`
+  ).join('');
+
+  // Real data from PABLIKI_DB
+  const dbCount = typeof PABLIKI_DB !== 'undefined' ? PABLIKI_DB.length : 826;
+  const avgCost = typeof PABLIKI_DB !== 'undefined' ? Math.round(PABLIKI_DB.reduce((s,p)=>s+p.co,0)/dbCount) : 47983;
+  const avgPrice = typeof PABLIKI_DB !== 'undefined' ? Math.round(PABLIKI_DB.reduce((s,p)=>s+p.p,0)/dbCount) : 105068;
+  const avgMargin = avgPrice > 0 ? ((avgPrice-avgCost)/avgPrice*100).toFixed(1) : '54.3';
+
   app.innerHTML = `
     <div class="header">
       <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
       <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
       <p>Юнит-экономика Pabliki.kz</p>
     </div>
+
     <div class="finance-card">
       <h4>📊 База пабликов</h4>
-      <div class="finance-row"><span class="label">Пабликов</span><span class="value">826</span></div>
-      <div class="finance-row"><span class="label">Средняя себестоимость</span><span class="value">47 983₸</span></div>
-      <div class="finance-row"><span class="label">Средняя цена клиенту</span><span class="value">105 068₸</span></div>
-      <div class="finance-row"><span class="label">Средняя маржа</span><span class="value green">54.3%</span></div>
+      <div class="finance-row"><span class="label">Пабликов</span><span class="value">${fmt(dbCount)}</span></div>
+      <div class="finance-row"><span class="label">Средняя себестоимость</span><span class="value">${fmt(avgCost)}₸</span></div>
+      <div class="finance-row"><span class="label">Средняя цена клиенту</span><span class="value">${fmt(avgPrice)}₸</span></div>
+      <div class="finance-row"><span class="label">Средняя маржа</span><span class="value green">${avgMargin}%</span></div>
     </div>
+
+    <div class="finance-card" style="border:2px solid var(--primary)">
+      <h4>💸 Затраты на реализацию Roadmap</h4>
+      <div class="finance-row"><span class="label">Разовые инвестиции</span><span class="value red">${fmt(totalOnce)}₸</span></div>
+      <div class="finance-row"><span class="label">Ежемесячные (команда)</span><span class="value red">${fmt(totalMonthly)}₸/мес</span></div>
+      ${customCost > 0 ? `<div class="finance-row"><span class="label">Пользовательские задачи</span><span class="value red">${fmt(customCost)}₸</span></div>` : ''}
+      <div class="finance-row" style="border-top:2px solid var(--border);padding-top:12px;margin-top:4px">
+        <span class="label" style="font-weight:700;color:var(--text)">За 12 месяцев</span>
+        <span class="value red" style="font-size:18px">${fmt(totalAnnual + customCost)}₸</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">* Команда: SDR #1 (300К/мес, мес 1-12) + SDR #2 + AE (700К/мес, мес 5-12) + AM (400К/мес, мес 7-12)</div>
+    </div>
+
+    <div class="finance-card">
+      <h4>📂 Затраты по категориям (12 мес)</h4>
+      ${catRows}
+    </div>
+
+    ${phaseCards}
+
     <div class="finance-card">
       <h4>🎯 Цель: 100 заказов × 1М₸</h4>
-      <div class="finance-row"><span class="label">Выручка</span><span class="value">100 000 000₸</span></div>
-      <div class="finance-row"><span class="label">Себестоимость</span><span class="value red">−47 983 000₸</span></div>
+      <div class="finance-row"><span class="label">Выручка/мес</span><span class="value">100 000 000₸</span></div>
+      <div class="finance-row"><span class="label">Себестоимость пабликов</span><span class="value red">−${fmt(avgCost * 100)}₸</span></div>
       <div class="finance-row"><span class="label">Налог ИП 10%</span><span class="value red">−10 000 000₸</span></div>
-      <div class="finance-row"><span class="label">Оператор (фикс)</span><span class="value red">−500 000₸</span></div>
+      <div class="finance-row"><span class="label">Команда (при полном штате)</span><span class="value red">−${fmt(totalMonthly)}₸</span></div>
       <div class="finance-row"><span class="label">Соц отчисления</span><span class="value red">−80 000₸</span></div>
       <div class="finance-row" style="border-top:2px solid var(--border);padding-top:12px;margin-top:4px">
-        <span class="label" style="font-weight:700;color:var(--text)">Чистая прибыль</span>
-        <span class="value green" style="font-size:18px">41 437 000₸</span>
+        <span class="label" style="font-weight:700;color:var(--text)">Чистая прибыль/мес</span>
+        <span class="value green" style="font-size:18px">${fmt(100000000 - avgCost*100 - 10000000 - totalMonthly - 80000)}₸</span>
       </div>
-      <div class="finance-row"><span class="label">Маржинальность</span><span class="value green">41.4%</span></div>
+      <div class="finance-row"><span class="label">ROI инвестиций</span><span class="value green">${Math.round((100000000 - avgCost*100 - 10000000 - totalMonthly - 80000) / (totalAnnual + customCost) * 100)}%/мес</span></div>
     </div>
+
     <div class="finance-card">
       <h4>📦 Пакеты</h4>
       <div class="finance-row"><span class="label">🏙️ Город (10-15 пабликов)</span><span class="value">300-500К₸</span></div>
       <div class="finance-row"><span class="label">🌆 Регион (3-5 городов)</span><span class="value" style="color:var(--primary)">800К-1.2М₸</span></div>
       <div class="finance-row"><span class="label">🇰🇿 Казахстан (все)</span><span class="value">2-3М₸</span></div>
     </div>
+
     <div class="finance-card">
-      <h4>⚖️ Точка безубыточности</h4>
-      <div class="finance-row"><span class="label">Фикс расходы/мес</span><span class="value">580 000₸</span></div>
-      <div class="finance-row"><span class="label">Маржа с 1 заказа</span><span class="value">420 170₸</span></div>
-      <div class="finance-row"><span class="label">Безубыточность</span><span class="value green">2 заказа/мес</span></div>
+      <h4>⚖️ Окупаемость инвестиций</h4>
+      <div class="finance-row"><span class="label">Всего инвестиций (12 мес)</span><span class="value">${fmt(totalAnnual + customCost)}₸</span></div>
+      <div class="finance-row"><span class="label">Маржа с 1 заказа (сред.)</span><span class="value">${fmt(avgPrice - avgCost)}₸</span></div>
+      <div class="finance-row"><span class="label">Окупаемость</span><span class="value green">${Math.ceil((totalAnnual + customCost) / (avgPrice - avgCost))} заказов</span></div>
+      <div class="finance-row"><span class="label">При 50 заказах/мес</span><span class="value green">~${Math.ceil((totalAnnual + customCost) / ((avgPrice - avgCost) * 50))} мес</span></div>
     </div>
-    <div class="finance-card">
-      <h4>🏆 Сценарии (100 заказов)</h4>
-      <div class="finance-row"><span class="label">Все прямые</span><span class="value green">41.4М₸ (41%)</span></div>
-      <div class="finance-row"><span class="label">70 прямых + 30 агентских</span><span class="value green">36.9М₸ (37%)</span></div>
-      <div class="finance-row"><span class="label">С командой (4 чел)</span><span class="value green">35.5М₸ (36%)</span></div>
-    </div>
+
     <div class="finance-card">
       <h4>💡 Самые маржинальные города</h4>
       <div class="finance-row"><span class="label">Кызылорда</span><span class="value green">68.5%</span></div>
