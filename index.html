@@ -169,8 +169,8 @@ body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-t
 .task-howto .step-num{width:22px;height:22px;border-radius:7px;background:oklch(from var(--primary) l c h / 0.15);color:var(--primary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .task-howto .step-text{flex:1;color:var(--text)}
 .task-howto .tip{margin-top:8px;padding:8px 10px;background:oklch(from var(--green) l c h / 0.1);border-radius:var(--radius);border-left:3px solid var(--green);font-size:11.5px;color:var(--green)}
-.task-expand-btn{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--accent);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
-.task-expand-btn:active{transform:scale(0.97);background:var(--border)}
+.task-expand-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:10px 16px;width:100%;border:1.5px solid var(--accent);border-radius:var(--radius);background:transparent;color:var(--accent);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.task-expand-btn:active{transform:scale(0.98);background:var(--surface)}
 .task.expanded .task-expand-btn{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .task-expand-btn .chevron{transition:transform .2s;display:inline-block}
 .task.expanded .task-expand-btn .chevron{transform:rotate(180deg)}
@@ -813,8 +813,8 @@ function renderTask(t, phaseId){
         <div class="task-title">${t.title}</div>
         ${t.desc ? `<div class="task-desc">${t.desc}</div>` : ''}
         <div class="task-tags">${tagsHtml}</div>
-        ${vBtn}
         ${howto ? `<button class="task-expand-btn" onclick="event.stopPropagation();toggleExpand('${t.id}')"><span class="chevron">▼</span> ${isExpanded ? 'Свернуть' : 'Как реализовать'}</button>` : ''}
+        ${vBtn}
         ${howto ? `<div class="task-howto">${howto}</div>` : ''}
       </div>
       <div class="task-delete" onclick="deleteTask('${phaseId}','${t.id}')">✕</div>
