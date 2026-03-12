@@ -308,8 +308,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <body>
 
 <div id="splash">
-  <h2>PABLIKI GROWTH</h2>
-  <p>Загрузка...</p>
+  <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+  <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+  <p style="margin-top:8px">Загрузка...</p>
 </div>
 
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
@@ -786,7 +787,8 @@ function renderRoadmap(app){
 
   let html = `
     <div class="header">
-      <h1>PABLIKI GROWTH</h1>
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
       <p>Roadmap → 100 заказов × 1 000 000₸</p>
     </div>
     <div class="progress-section">
@@ -891,7 +893,8 @@ function renderTask(t, phaseId){
 function renderFinance(app){
   app.innerHTML = `
     <div class="header">
-      <h1>ЭКОНОМИКА</h1>
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
       <p>Юнит-экономика Pabliki.kz</p>
     </div>
     <div class="finance-card">
@@ -948,7 +951,8 @@ function renderSettings(app){
   const done = allTasks.filter(t=>t.done).length;
   app.innerHTML = `
     <div class="header">
-      <h1>НАСТРОЙКИ</h1>
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
       <p>Управление данными</p>
     </div>
     <div class="finance-card">
