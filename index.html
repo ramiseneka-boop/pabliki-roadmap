@@ -1067,7 +1067,7 @@ function resetData(){
 
 // ===================== SELECTION / ПОДБОРКА =====================
 let selCity = 'all';
-let selCat = 'all';
+let selCats = new Set(); // empty = all
 let selMode = 'client'; // client | full
 let selMinSubs = 0;
 let selMaxPerItem = 10000000;
@@ -1077,7 +1077,7 @@ let selSelected = new Set();
 function getFilteredPabliki(){
   return PABLIKI_DB.filter(p => {
     if(selCity !== 'all' && p.c !== selCity) return false;
-    if(selCat !== 'all' && p.t !== selCat) return false;
+    if(selCats.size > 0 && !selCats.has(p.t)) return false;
     if(p.s < selMinSubs) return false;
     if(p.p > selMaxPerItem) return false;
     return true;
@@ -1101,9 +1101,10 @@ function renderSelection(app){
   ).join('');
   
   const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
-  const catOptions = ['all', ...PABLIKI_CATS].map(c =>
-    `<button class="city-chip ${selCat===c?'active':''}" onclick="selCat='${c}';render()">${c==='all'?'Все категории':(catIcons[c]||'')+ ' ' +c}</button>`
-  ).join('');
+  const catOptions = [`<button class="city-chip ${selCats.size===0?'active':''}" onclick="selCats.clear();render()">Все категории</button>`,
+    ...PABLIKI_CATS.map(c =>
+    `<button class="city-chip ${selCats.has(c)?'active':''}" onclick="if(selCats.has('${c}')){selCats.delete('${c}')}else{selCats.add('${c}')};render()">${(catIcons[c]||'')+' '+c}</button>`)
+  ].join('');
 
   let tableHead, tableRows;
   
@@ -1126,11 +1127,12 @@ function renderSelection(app){
       </tr>`;
     }).join('');
   } else {
-    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th>Кат.</th><th class="num">Подп.</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">%</th></tr>`;
+    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th>Кат.</th><th class="num">Подп.</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">Маржа</th><th class="num">%</th></tr>`;
     tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
-      const margin = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
-      const mColor = margin >= 50 ? 'var(--green)' : margin >= 30 ? 'var(--yellow)' : 'var(--red)';
+      const marginPct = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
+      const marginT = p.p - p.co;
+      const mColor = marginPct >= 50 ? 'var(--green)' : marginPct >= 30 ? 'var(--yellow)' : 'var(--red)';
       const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
@@ -1140,7 +1142,8 @@ function renderSelection(app){
         <td class="num">${fmt(p.s)}</td>
         <td class="num">${fmt(p.co)}₸</td>
         <td class="num">${fmt(p.p)}₸</td>
-        <td class="num" style="color:${mColor};font-weight:700">${margin}%</td>
+        <td class="num" style="color:${mColor};font-weight:600">${fmt(marginT)}₸</td>
+        <td class="num" style="color:${mColor};font-weight:700">${marginPct}%</td>
       </tr>`;
     }).join('');
   }
@@ -1193,6 +1196,7 @@ function renderSelection(app){
       <div class="sel-total-row"><span class="label">Итого стоимость</span><span class="val">${fmt(totalPrice)}₸</span></div>
       ${selMode==='full'?`
       <div class="sel-total-row"><span class="label">Себестоимость</span><span class="val">${fmt(totalCost)}₸</span></div>
+      <div class="sel-total-row"><span class="label">Маржа (₸)</span><span class="val green">${fmt(totalPrice - totalCost)}₸</span></div>
       <div class="sel-total-row"><span class="label">Маржинальность</span><span class="val green">${totalMargin}%</span></div>
       `:''}
     </div>
@@ -1253,6 +1257,7 @@ function exportSelPDF(){
   
   let rows = selected.map((p,i) => {
     const margin = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
+    const marginT = p.p - p.co;
     const mColor = margin >= 50 ? '#16a34a' : margin >= 30 ? '#ca8a04' : '#dc2626';
     return `<tr>
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${i+1}</td>
@@ -1262,6 +1267,7 @@ function exportSelPDF(){
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-variant-numeric:tabular-nums">${fmt(p.s)}</td>
       ${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-variant-numeric:tabular-nums">${fmt(p.co)}₸</td>`:''}
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${fmt(p.p)}₸</td>
+      ${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:${mColor}">${fmt(marginT)}₸</td>`:''}
       ${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;color:${mColor}">${margin}%</td>`:''}
     </tr>`;
   }).join('');
@@ -1295,14 +1301,16 @@ function exportSelPDF(){
       <div class="stat"><div class="n">${fmt(totalSubs)}</div><div class="l">аудитория</div></div>
       ${!isClient?`<div class="stat"><div class="n">${fmt(totalCost)}₸</div><div class="l">себестоимость</div></div>`:''}
       <div class="stat"><div class="n">${fmt(totalPrice)}₸</div><div class="l">${isClient?'стоимость':'продажа'}</div></div>
-      ${!isClient?`<div class="stat"><div class="n" style="color:#16a34a">${totalMargin}%</div><div class="l">маржа</div></div>`:''}
+      ${!isClient?`<div class="stat"><div class="n" style="color:#16a34a">${fmt(totalPrice-totalCost)}₸</div><div class="l">маржа ₸</div></div>`:''}
+      ${!isClient?`<div class="stat"><div class="n" style="color:#16a34a">${totalMargin}%</div><div class="l">маржа %</div></div>`:''}
     </div>
     <table>
       <thead><tr>
         <th>№</th><th>Город</th><th>Instagram</th><th>Категория</th><th style="text-align:right">Подписчики</th>
         ${!isClient?'<th style="text-align:right">Себест.</th>':''}
         <th style="text-align:right">Цена</th>
-        ${!isClient?'<th style="text-align:right">Маржа</th>':''}
+        ${!isClient?'<th style="text-align:right">Маржа ₸</th>':''}
+        ${!isClient?'<th style="text-align:right">%</th>':''}
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
@@ -1310,6 +1318,7 @@ function exportSelPDF(){
         <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
         ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalCost)}₸</td>`:''}
         <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
+        ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${fmt(totalPrice-totalCost)}₸</td>`:''}
         ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${totalMargin}%</td>`:''}
       </tr></tfoot>
     </table>
