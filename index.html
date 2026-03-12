@@ -1176,7 +1176,10 @@ function renderSelection(app){
       </div>
     </div>
     
-    <div class="sel-count">Найдено: <strong>${filtered.length}</strong> пабликов · Выбрано: <strong>${selected.length}</strong></div>
+    <div class="sel-count" style="display:flex;align-items:center;justify-content:center;gap:12px">
+      <span>Найдено: <strong>${filtered.length}</strong> · Выбрано: <strong>${selected.length}</strong></span>
+      <button class="city-chip ${filtered.every(p=>selSelected.has(p.ig))?'active':''}" onclick="if(getFilteredPabliki().every(p=>selSelected.has(p.ig))){getFilteredPabliki().forEach(p=>selSelected.delete(p.ig))}else{getFilteredPabliki().forEach(p=>selSelected.add(p.ig))};render()" style="font-size:11px;padding:5px 10px">${filtered.every(p=>selSelected.has(p.ig))&&filtered.length?'✕ Снять все':'☑ Выбрать все'}</button>
+    </div>
     
     ${selected.length > 0 ? `
     <div class="sel-total">
