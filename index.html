@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Pabliki Growth — Roadmap</title>
+<script src="pabliki-data.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -225,6 +226,43 @@ body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-t
 /* ======================== ANIMATIONS ======================== */
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
+/* ======================== SELECTION / ПОДБОРКА ======================== */
+.filter-section{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.filter-section h4{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text)}
+.filter-row{margin-bottom:12px}
+.filter-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;display:flex;justify-content:space-between}
+.filter-label span{color:var(--primary);font-weight:700}
+.city-chips{display:flex;flex-wrap:wrap;gap:6px}
+.city-chip{padding:6px 10px;border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.city-chip.active{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.city-chip:active{transform:scale(0.95)}
+input[type=range]{width:100%;height:4px;border-radius:2px;outline:none;-webkit-appearance:none;background:var(--surface);margin:8px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--primary);cursor:pointer;border:2px solid var(--card-bg)}
+.mode-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.mode-btn{flex:1;padding:10px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;transition:all .2s}
+.mode-btn.active{background:var(--primary);color:var(--primary-fg)}
+.sel-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:12px}
+.sel-table th{text-align:left;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:var(--primary);border-bottom:2px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--card-bg);z-index:2}
+.sel-table td{padding:8px 6px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.sel-table td:first-child{color:var(--text);font-weight:600}
+.sel-table tr:last-child td{border-bottom:none}
+.sel-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.sel-table .ig-link{color:var(--accent);text-decoration:none;font-weight:600}
+.sel-table .ig-link:active{opacity:0.7}
+.sel-check{width:18px;height:18px;border-radius:4px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.sel-check.checked{background:var(--primary);border-color:var(--primary)}
+.sel-check.checked::after{content:'✓';color:var(--primary-fg);font-size:11px;font-weight:700}
+.sel-total{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.sel-total-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.sel-total-row .label{color:var(--text2)}
+.sel-total-row .val{font-weight:700;color:var(--text)}
+.sel-total-row .val.green{color:var(--green)}
+.sel-actions{display:flex;gap:8px;margin-bottom:16px}
+.sel-actions .btn{flex:1;font-size:12px;padding:12px}
+.table-wrap{overflow-x:auto;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);max-height:50vh;overflow-y:auto}
+.sel-count{font-size:12px;color:var(--text2);margin-bottom:8px;text-align:center}
+.sel-count strong{color:var(--primary)}
+
 /* Tag fallback for browsers without oklch relative */
 @supports not (background: oklch(from red l c h / 0.5)) {
   .tag.priority-high{background:rgba(210,80,80,0.15);color:#d25050}
@@ -255,6 +293,7 @@ body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-t
 
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchView('roadmap')"><span class="icon">🗺️</span><span class="label">Roadmap</span></div>
+  <div class="nav-item" onclick="switchView('selection')"><span class="icon">📋</span><span class="label">Подборка</span></div>
   <div class="nav-item" onclick="switchView('finance')"><span class="icon">💰</span><span class="label">Экономика</span></div>
   <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
 </div>
@@ -705,6 +744,7 @@ function saveState(){
 function render(){
   const app = document.getElementById('app');
   if(currentView === 'roadmap') renderRoadmap(app);
+  else if(currentView === 'selection') renderSelection(app);
   else if(currentView === 'finance') renderFinance(app);
   else renderSettings(app);
   updateNav();
@@ -976,7 +1016,7 @@ function setFilter(f){ currentFilter = f; render(); }
 function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
-    const views = ['roadmap','finance','settings'];
+    const views = ['roadmap','selection','finance','settings'];
     el.classList.toggle('active', views[i]===currentView);
   });
 }
@@ -1023,6 +1063,228 @@ function resetData(){
   state = {phases: JSON.parse(JSON.stringify(DEFAULT_PHASES)), customTasks:[], version:2};
   saveState(); render();
   showToast('🗑 Данные сброшены');
+}
+
+// ===================== SELECTION / ПОДБОРКА =====================
+let selCity = 'all';
+let selMode = 'client'; // client | full
+let selMinSubs = 0;
+let selMaxPrice = 10000000;
+let selSelected = new Set();
+
+function getFilteredPabliki(){
+  return PABLIKI_DB.filter(p => {
+    if(selCity !== 'all' && p.c !== selCity) return false;
+    if(p.s < selMinSubs) return false;
+    if(p.p > selMaxPrice) return false;
+    return true;
+  }).sort((a,b) => b.s - a.s);
+}
+
+function renderSelection(app){
+  const filtered = getFilteredPabliki();
+  const selected = filtered.filter(p => selSelected.has(p.ig));
+  
+  // Totals
+  const totalSubs = selected.reduce((s,p) => s + p.s, 0);
+  const totalPrice = selected.reduce((s,p) => s + p.p, 0);
+  const totalCost = selected.reduce((s,p) => s + p.co, 0);
+  const totalMargin = totalPrice > 0 ? Math.round((totalPrice - totalCost) / totalPrice * 100) : 0;
+  
+  const fmt = n => n.toLocaleString('ru-RU');
+  
+  const cityOptions = ['all', ...PABLIKI_CITIES].map(c => 
+    `<button class="city-chip ${selCity===c?'active':''}" onclick="selCity='${c}';render()">${c==='all'?'Все города':c}</button>`
+  ).join('');
+
+  let tableHead, tableRows;
+  
+  if(selMode === 'client'){
+    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th class="num">Подписчики</th><th class="num">Цена</th></tr>`;
+    tableRows = filtered.map(p => {
+      const checked = selSelected.has(p.ig);
+      return `<tr>
+        <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
+        <td>${p.c}</td>
+        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
+        <td class="num">${fmt(p.s)}</td>
+        <td class="num">${fmt(p.p)}₸</td>
+      </tr>`;
+    }).join('');
+  } else {
+    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th class="num">Подписчики</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">Маржа</th></tr>`;
+    tableRows = filtered.map(p => {
+      const checked = selSelected.has(p.ig);
+      const margin = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
+      const mColor = margin >= 50 ? 'var(--green)' : margin >= 30 ? 'var(--yellow)' : 'var(--red)';
+      return `<tr>
+        <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
+        <td>${p.c}</td>
+        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
+        <td class="num">${fmt(p.s)}</td>
+        <td class="num">${fmt(p.co)}₸</td>
+        <td class="num">${fmt(p.p)}₸</td>
+        <td class="num" style="color:${mColor};font-weight:700">${margin}%</td>
+      </tr>`;
+    }).join('');
+  }
+
+  app.innerHTML = `
+    <div class="header">
+      <h1>ПОДБОРКА</h1>
+      <p>Создай медиаплан из ${PABLIKI_DB.length} пабликов</p>
+    </div>
+    
+    <div class="mode-toggle">
+      <div class="mode-btn ${selMode==='client'?'active':''}" onclick="selMode='client';render()">👤 Для клиента</div>
+      <div class="mode-btn ${selMode==='full'?'active':''}" onclick="selMode='full';render()">📊 Полная</div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>🏙️ Город</h4>
+      <div class="city-chips">${cityOptions}</div>
+    </div>
+    
+    <div class="filter-section">
+      <div class="filter-row">
+        <div class="filter-label">Мин. подписчики <span id="lblSubs">${fmt(selMinSubs)}</span></div>
+        <input type="range" min="0" max="500000" step="5000" value="${selMinSubs}" oninput="selMinSubs=+this.value;document.getElementById('lblSubs').textContent=Number(this.value).toLocaleString('ru-RU');render()">
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">Макс. бюджет за паблик <span id="lblPrice">${selMaxPrice>=10000000?'∞':fmt(selMaxPrice)+'₸'}</span></div>
+        <input type="range" min="5000" max="10000000" step="5000" value="${selMaxPrice}" oninput="selMaxPrice=+this.value;document.getElementById('lblPrice').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸';render()">
+      </div>
+    </div>
+    
+    <div class="sel-count">Найдено: <strong>${filtered.length}</strong> пабликов · Выбрано: <strong>${selected.length}</strong></div>
+    
+    ${selected.length > 0 ? `
+    <div class="sel-total">
+      <div class="sel-total-row"><span class="label">Выбрано пабликов</span><span class="val">${selected.length}</span></div>
+      <div class="sel-total-row"><span class="label">Суммарная аудитория</span><span class="val">${fmt(totalSubs)}</span></div>
+      <div class="sel-total-row"><span class="label">Итого стоимость</span><span class="val">${fmt(totalPrice)}₸</span></div>
+      ${selMode==='full'?`
+      <div class="sel-total-row"><span class="label">Себестоимость</span><span class="val">${fmt(totalCost)}₸</span></div>
+      <div class="sel-total-row"><span class="label">Маржинальность</span><span class="val green">${totalMargin}%</span></div>
+      `:''}
+    </div>
+    <div class="sel-actions">
+      <button class="btn btn-primary" onclick="exportSelPDF()">📄 PDF</button>
+      <button class="btn btn-ghost" onclick="shareSel()">🔗 Поделиться</button>
+      <button class="btn btn-ghost" onclick="selSelected.clear();render()">✕ Сбросить</button>
+    </div>
+    ` : ''}
+    
+    <div class="table-wrap">
+      <table class="sel-table">
+        <thead>${tableHead}</thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function toggleSel(ig){
+  if(selSelected.has(ig)) selSelected.delete(ig);
+  else selSelected.add(ig);
+  render();
+}
+
+function selectAllFiltered(){
+  getFilteredPabliki().forEach(p => selSelected.add(p.ig));
+  render();
+}
+
+function exportSelPDF(){
+  const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
+  if(!selected.length){showToast('Выберите паблики');return;}
+  
+  const fmt = n => n.toLocaleString('ru-RU');
+  const totalSubs = selected.reduce((s,p) => s + p.s, 0);
+  const totalPrice = selected.reduce((s,p) => s + p.p, 0);
+  const isClient = selMode === 'client';
+  const date = new Date().toLocaleDateString('ru-RU');
+  
+  let rows = selected.map((p,i) => `
+    <tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${i+1}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1f2937">${p.c}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#2563eb;font-weight:500">@${p.ig}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-variant-numeric:tabular-nums">${fmt(p.s)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${fmt(p.p)}₸</td>
+    </tr>
+  `).join('');
+  
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Montserrat',sans-serif;color:#1f2937;background:#fff}
+    .page{max-width:800px;margin:0 auto;padding:40px}
+    .header{text-align:center;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #2563eb}
+    .logo{font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px}
+    .subtitle{font-size:13px;color:#6b7280;margin-top:4px}
+    .stats{display:flex;justify-content:center;gap:32px;margin:24px 0}
+    .stat{text-align:center}
+    .stat .n{font-size:24px;font-weight:800;color:#2563eb}
+    .stat .l{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+    table{width:100%;border-collapse:collapse;margin-top:16px}
+    th{padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff}
+    th:nth-child(4),th:nth-child(5){text-align:right}
+    .footer{text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af}
+    @media print{.page{padding:20px}}
+  </style></head><body>
+  <div class="page">
+    <div class="header">
+      <div class="logo">PABLIKI.KZ</div>
+      <div class="subtitle">Городская реклама нового поколения — медиаплан от ${date}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">${selected.length}</div><div class="l">пабликов</div></div>
+      <div class="stat"><div class="n">${fmt(totalSubs)}</div><div class="l">аудитория</div></div>
+      <div class="stat"><div class="n">${fmt(totalPrice)}₸</div><div class="l">стоимость</div></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>№</th><th>Город</th><th>Instagram</th><th style="text-align:right">Подписчики</th><th style="text-align:right">Цена (пост+сторис)</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr>
+        <td colspan="3" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
+        <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
+        <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
+      </tr></tfoot>
+    </table>
+    <div class="footer">
+      pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>
+      +7 777 151 6166 · WhatsApp
+    </div>
+  </div></body></html>`;
+  
+  const w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
+function shareSel(){
+  const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
+  if(!selected.length){showToast('Выберите паблики');return;}
+  const fmt = n => n.toLocaleString('ru-RU');
+  const totalSubs = selected.reduce((s,p) => s + p.s, 0);
+  const totalPrice = selected.reduce((s,p) => s + p.p, 0);
+  
+  let text = `📋 МЕДИАПЛАН PABLIKI.KZ\n${selected.length} пабликов · ${fmt(totalSubs)} подписчиков\n\n`;
+  selected.forEach((p,i) => {
+    text += `${i+1}. @${p.ig} (${p.c}) — ${fmt(p.s)} подп. — ${fmt(p.p)}₸\n`;
+  });
+  text += `\n💰 Итого: ${fmt(totalPrice)}₸\n\npabliki.kz`;
+  
+  if(navigator.share){
+    navigator.share({title:'Медиаплан Pabliki.kz',text}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(()=>showToast('📋 Скопировано!')).catch(()=>{});
+  }
 }
 
 // ===================== INIT =====================
