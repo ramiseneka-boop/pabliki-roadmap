@@ -1099,9 +1099,13 @@ function renderSelection(app){
 
   let tableHead, tableRows;
   
+  const showLimit = 100;
+  const shown = filtered.slice(0, showLimit);
+  const hasMore = filtered.length > showLimit;
+  
   if(selMode === 'client'){
     tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th class="num">Подписчики</th><th class="num">Цена</th></tr>`;
-    tableRows = filtered.map(p => {
+    tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
@@ -1113,7 +1117,7 @@ function renderSelection(app){
     }).join('');
   } else {
     tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th class="num">Подписчики</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">Маржа</th></tr>`;
-    tableRows = filtered.map(p => {
+    tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
       const margin = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
       const mColor = margin >= 50 ? 'var(--green)' : margin >= 30 ? 'var(--yellow)' : 'var(--red)';
@@ -1148,11 +1152,11 @@ function renderSelection(app){
     <div class="filter-section">
       <div class="filter-row">
         <div class="filter-label">Мин. подписчики <span id="lblSubs">${fmt(selMinSubs)}</span></div>
-        <input type="range" min="0" max="500000" step="5000" value="${selMinSubs}" oninput="selMinSubs=+this.value;document.getElementById('lblSubs').textContent=Number(this.value).toLocaleString('ru-RU');render()">
+        <input type="range" min="0" max="500000" step="5000" value="${selMinSubs}" oninput="document.getElementById('lblSubs').textContent=Number(this.value).toLocaleString('ru-RU')" onchange="selMinSubs=+this.value;render()">
       </div>
       <div class="filter-row">
         <div class="filter-label">Макс. бюджет за паблик <span id="lblPrice">${selMaxPrice>=10000000?'∞':fmt(selMaxPrice)+'₸'}</span></div>
-        <input type="range" min="5000" max="10000000" step="5000" value="${selMaxPrice}" oninput="selMaxPrice=+this.value;document.getElementById('lblPrice').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸';render()">
+        <input type="range" min="5000" max="10000000" step="5000" value="${selMaxPrice}" oninput="document.getElementById('lblPrice').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸'" onchange="selMaxPrice=+this.value;render()">
       </div>
     </div>
     
@@ -1181,6 +1185,7 @@ function renderSelection(app){
         <tbody>${tableRows}</tbody>
       </table>
     </div>
+    ${hasMore ? `<div style="text-align:center;padding:12px;color:var(--text2);font-size:12px">Показано ${showLimit} из ${filtered.length} · Используйте фильтры для уточнения</div>` : ''}
   `;
 }
 
