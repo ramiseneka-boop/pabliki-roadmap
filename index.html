@@ -72,8 +72,8 @@ body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xm
 .phase-chevron{color:var(--text3);transition:transform .3s;flex-shrink:0}
 .phase.open .phase-chevron{transform:rotate(180deg)}
 
-.phase-body{background:var(--card-solid);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;max-height:0;transition:max-height .4s ease;padding:0 16px}
-.phase.open .phase-body{max-height:5000px;padding:8px 16px 16px}
+.phase-body{background:var(--card-solid);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;display:none;padding:8px 16px 16px}
+.phase.open .phase-body{display:block}
 
 /* TASK ITEM */
 .task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);transition:opacity .3s}
