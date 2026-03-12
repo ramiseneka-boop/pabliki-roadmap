@@ -1,190 +1,254 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0a0a1a">
+<meta name="theme-color" content="#1e1e2e" id="themeMetaColor">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Pabliki Growth — Roadmap</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ======================== CATPPUCCIN THEME ======================== */
 :root{
-  --bg1:#0B0D17;--bg2:#111428;--bg3:#0D1117;
-  --card:linear-gradient(145deg,#161B2E,#1C2333);
-  --card-solid:#161B2E;
-  --border:rgba(255,255,255,0.07);
-  --gold1:#C9A44C;--gold2:#E8D07E;
-  --green:#2DD4A8;--red:#FF6B6B;--blue:#60A5FA;--purple:#A78BFA;--orange:#FB923C;
-  --text:#E8E8F0;--text2:#7B8394;--text3:#4A5068;
-  --radius:16px;
+  --radius:6px;
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-html{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg1);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent}
-body{min-height:100vh;background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%);padding:0;overflow-x:hidden;padding-top:var(--safe-top);padding-bottom:calc(80px + var(--safe-bottom))}
-body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");background-size:128px;pointer-events:none;z-index:0;opacity:.5}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(201,164,76,.2);border-radius:2px}
 
-.container{max-width:520px;margin:0 auto;padding:16px;position:relative;z-index:1}
+/* DARK — Catppuccin Mocha */
+[data-theme="dark"]{
+  --bg:oklch(0.2155 0.0254 284.0647);
+  --bg2:oklch(0.2429 0.0304 283.9110);
+  --surface:oklch(0.2973 0.0294 276.2144);
+  --text:oklch(0.8787 0.0426 272.2767);
+  --text2:oklch(0.7510 0.0396 273.9320);
+  --text3:oklch(0.5500 0.0340 278);
+  --border:oklch(0.3240 0.0319 281.9784);
+  --primary:oklch(0.7871 0.1187 304.7693);
+  --primary-fg:oklch(0.2429 0.0304 283.9110);
+  --accent:oklch(0.8467 0.0833 210.2545);
+  --accent-fg:oklch(0.2429 0.0304 283.9110);
+  --green:oklch(0.8577 0.1092 142.7153);
+  --red:oklch(0.7556 0.1297 2.7642);
+  --peach:oklch(0.8237 0.1015 52.6294);
+  --yellow:oklch(0.8870 0.0979 84.3);
+  --blue:oklch(0.7400 0.1200 240);
+  --chart1:oklch(0.7871 0.1187 304.7693);
+  --chart2:oklch(0.8467 0.0833 210.2545);
+  --chart3:oklch(0.8577 0.1092 142.7153);
+  --chart4:oklch(0.8237 0.1015 52.6294);
+  --shadow:0px 4px 6px 0px hsl(240 30% 25% / 0.12);
+  --card-bg:oklch(0.2429 0.0304 283.9110);
+  --input-bg:oklch(0.2973 0.0294 276.2144);
+}
 
-/* HEADER */
-.header{text-align:center;padding:24px 0 8px}
-.header h1{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--gold1),var(--gold2),var(--gold1));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px}
-.header p{color:var(--text2);font-size:13px;margin-top:4px}
+/* LIGHT — Catppuccin Latte */
+[data-theme="light"]{
+  --bg:oklch(0.9578 0.0058 264.5321);
+  --bg2:oklch(1.0000 0 0);
+  --surface:oklch(0.9060 0.0117 264.5071);
+  --text:oklch(0.4355 0.0430 279.3250);
+  --text2:oklch(0.5471 0.0343 279.0837);
+  --text3:oklch(0.7000 0.0200 270);
+  --border:oklch(0.8083 0.0174 271.1982);
+  --primary:oklch(0.5547 0.2503 297.0156);
+  --primary-fg:oklch(1.0000 0 0);
+  --accent:oklch(0.6820 0.1448 235.3822);
+  --accent-fg:oklch(1.0000 0 0);
+  --green:oklch(0.6250 0.1772 140.4448);
+  --red:oklch(0.5505 0.2155 19.8095);
+  --peach:oklch(0.6920 0.2041 42.4293);
+  --yellow:oklch(0.6800 0.1500 80);
+  --blue:oklch(0.5800 0.1800 240);
+  --chart1:oklch(0.5547 0.2503 297.0156);
+  --chart2:oklch(0.6820 0.1448 235.3822);
+  --chart3:oklch(0.6250 0.1772 140.4448);
+  --chart4:oklch(0.6920 0.2041 42.4293);
+  --shadow:0px 4px 6px 0px hsl(240 30% 25% / 0.08);
+  --card-bg:oklch(1.0000 0 0);
+  --input-bg:oklch(0.9060 0.0117 264.5071);
+}
 
-/* PROGRESS BAR */
-.progress-section{margin:20px 0}
-.progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-.progress-header span{font-size:13px;color:var(--text2)}
-.progress-header strong{font-size:24px;font-weight:800;color:var(--green)}
-.progress-bar{height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold1));border-radius:4px;transition:width 0.6s ease}
+/* ======================== BASE ======================== */
+html{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent;transition:background .3s,color .3s}
+body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-top:var(--safe-top);padding-bottom:calc(80px + var(--safe-bottom));transition:background .3s}
 
-/* STATS ROW */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
-.stat .num{font-size:22px;font-weight:800}
-.stat .label{font-size:10px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+/* ======================== SPLASH ======================== */
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s}
+#splash h2{font-size:22px;font-weight:800;color:var(--primary);letter-spacing:2px}
+#splash p{color:var(--text2);font-size:12px;margin-top:8px}
+
+#app{max-width:480px;margin:0 auto;padding:24px 16px}
+
+/* ======================== HEADER ======================== */
+.header{text-align:center;padding:16px 0 20px}
+.header h1{font-size:28px;font-weight:900;letter-spacing:2px;color:var(--primary)}
+.header p{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* ======================== THEME TOGGLE ======================== */
+.theme-toggle{position:fixed;top:calc(16px + var(--safe-top));right:16px;z-index:100;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--card-bg);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .3s;box-shadow:var(--shadow)}
+.theme-toggle:active{transform:scale(0.9)}
+
+/* ======================== PROGRESS ======================== */
+.progress-section{margin-bottom:20px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;color:var(--text2)}
+.progress-header strong{font-size:22px;color:var(--primary);font-weight:800}
+.progress-bar{height:6px;background:var(--surface);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width .5s ease}
+
+/* ======================== STATS ======================== */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stat{text-align:center;padding:14px 8px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius)}
+.stat .num{font-size:24px;font-weight:800;line-height:1}
+.stat .label{font-size:10px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
 .stat.green .num{color:var(--green)}
-.stat.orange .num{color:var(--orange)}
-.stat.blue .num{color:var(--blue)}
+.stat.orange .num{color:var(--peach)}
+.stat.blue .num{color:var(--accent)}
 
-/* TABS */
-.tabs{display:flex;gap:6px;margin:20px 0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+/* ======================== TABS ======================== */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px;scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;background:rgba(255,255,255,0.04);color:var(--text2);border:1px solid transparent;white-space:nowrap}
-.tab.active{background:linear-gradient(135deg,rgba(201,164,76,0.15),rgba(232,208,126,0.1));color:var(--gold2);border-color:rgba(201,164,76,0.3)}
+.tab{padding:8px 14px;border-radius:var(--radius);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:all .2s;color:var(--text2);background:var(--card-bg);border:1px solid var(--border)}
+.tab.active{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.tab:active{transform:scale(0.96)}
 
-/* PHASE CARD */
-.phase{margin-bottom:20px;animation:fadeIn .4s ease}
-.phase-header{display:flex;align-items:center;gap:12px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;cursor:pointer;transition:all .3s}
+/* ======================== PHASE ======================== */
+.phase{margin-bottom:16px}
+.phase-header{display:flex;align-items:center;gap:12px;padding:16px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
 .phase-header:active{transform:scale(0.99)}
-.phase-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.phase-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .phase-info{flex:1;min-width:0}
-.phase-info h3{font-size:15px;font-weight:700;margin-bottom:2px}
-.phase-info .meta{font-size:11px;color:var(--text2)}
+.phase-info h3{font-size:14px;font-weight:800;letter-spacing:0.5px;color:var(--text)}
+.phase-info .meta{font-size:11px;color:var(--text2);margin-top:2px}
 .phase-progress{font-size:14px;font-weight:700;flex-shrink:0}
 .phase-chevron{color:var(--text3);transition:transform .3s;flex-shrink:0}
 .phase.open .phase-chevron{transform:rotate(180deg)}
 
-.phase-body{background:var(--card-solid);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;display:none;padding:8px 16px 16px}
+.phase-body{background:var(--card-bg);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;display:none;padding:8px 16px 16px}
 .phase.open .phase-body{display:block}
 
-/* TASK ITEM */
-.task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);transition:opacity .3s}
-.task:last-child{border-bottom:none}
+/* ======================== TASK ======================== */
+.task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);transition:opacity .3s}
+.task:last-of-type{border-bottom:none}
 .task.done{opacity:0.5}
-.task-check{width:24px;height:24px;border-radius:8px;border:2px solid var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .3s;margin-top:1px}
-.task-check:active{transform:scale(0.9)}
+.task-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;cursor:pointer;transition:all .2s;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.task-check:active{transform:scale(0.85)}
 .task.done .task-check{background:var(--green);border-color:var(--green)}
-.task.done .task-check::after{content:'✓';color:#fff;font-size:14px;font-weight:700}
-.task-content{flex:1;min-width:0}
-.task-title{font-size:14px;font-weight:500;line-height:1.4}
+.task.done .task-check::after{content:'✓';color:var(--bg);font-size:12px;font-weight:700}
+.task-content{flex:1;min-width:0;cursor:pointer}
+.task-title{font-size:14px;font-weight:600;line-height:1.4;color:var(--text)}
 .task.done .task-title{text-decoration:line-through;color:var(--text2)}
-.task-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4}
-.task-content{cursor:pointer}
-.task-howto{display:none;margin-top:10px;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:12.5px;color:var(--text2);line-height:1.7}
+.task-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-top:4px}
+.task-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px}
+.tag.priority-high{background:oklch(from var(--red) l c h / 0.15);color:var(--red)}
+.tag.priority-med{background:oklch(from var(--yellow) l c h / 0.15);color:var(--yellow)}
+.tag.priority-low{background:oklch(from var(--blue) l c h / 0.15);color:var(--blue)}
+.tag.type-seo{background:oklch(from var(--accent) l c h / 0.15);color:var(--accent)}
+.tag.type-sales{background:oklch(from var(--green) l c h / 0.15);color:var(--green)}
+.tag.type-product{background:oklch(from var(--peach) l c h / 0.15);color:var(--peach)}
+.tag.type-marketing{background:oklch(from var(--primary) l c h / 0.15);color:var(--primary)}
+.tag.type-team{background:oklch(from var(--chart4) l c h / 0.15);color:var(--chart4)}
+.task-delete{color:var(--text3);font-size:14px;cursor:pointer;padding:4px;opacity:0.5;transition:all .2s;flex-shrink:0}
+.task-delete:active{opacity:1;color:var(--red)}
+
+/* ======================== HOWTO EXPAND ======================== */
+.task-howto{display:none;margin-top:10px;padding:12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);font-size:12.5px;color:var(--text2);line-height:1.7}
 .task.expanded .task-howto{display:block;animation:fadeIn .3s ease}
-.task-howto h5{color:var(--gold2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.task-howto h5{color:var(--primary);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
 .task-howto p{margin-bottom:8px}
 .task-howto ul{margin:6px 0 10px 16px}
 .task-howto li{margin-bottom:4px}
 .task-howto .step{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
-.task-howto .step-num{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,rgba(201,164,76,0.2),rgba(232,208,126,0.1));color:var(--gold2);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.task-howto .step-num{width:22px;height:22px;border-radius:7px;background:oklch(from var(--primary) l c h / 0.15);color:var(--primary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .task-howto .step-text{flex:1;color:var(--text)}
-.task-howto .tip{margin-top:8px;padding:8px 10px;background:rgba(45,212,168,0.08);border-radius:8px;border-left:3px solid var(--green);font-size:11.5px;color:var(--green)}
+.task-howto .tip{margin-top:8px;padding:8px 10px;background:oklch(from var(--green) l c h / 0.1);border-radius:var(--radius);border-left:3px solid var(--green);font-size:11.5px;color:var(--green)}
 .task-expand-hint{font-size:11px;color:var(--text3);margin-top:4px;transition:opacity .3s}
 .task.expanded .task-expand-hint{opacity:0;height:0;margin:0;overflow:hidden}
-.victoria-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 14px;border:none;border-radius:10px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;text-decoration:none;-webkit-tap-highlight-color:transparent}
-.victoria-btn.can-do{background:linear-gradient(135deg,rgba(201,164,76,0.2),rgba(232,208,126,0.12));color:var(--gold2);border:1px solid rgba(201,164,76,0.25)}
-.victoria-btn.can-do:active{transform:scale(0.97);background:linear-gradient(135deg,rgba(201,164,76,0.35),rgba(232,208,126,0.2))}
-.victoria-btn.guide{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
-.victoria-btn.guide:active{transform:scale(0.97);background:rgba(96,165,250,0.2)}
-.task-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.tag{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
-.tag.priority-high{background:rgba(255,107,107,0.15);color:var(--red)}
-.tag.priority-med{background:rgba(251,146,60,0.15);color:var(--orange)}
-.tag.priority-low{background:rgba(96,165,250,0.15);color:var(--blue)}
-.tag.type-seo{background:rgba(45,212,168,0.15);color:var(--green)}
-.tag.type-sales{background:rgba(201,164,76,0.15);color:var(--gold2)}
-.tag.type-product{background:rgba(167,139,250,0.15);color:var(--purple)}
-.tag.type-marketing{background:rgba(96,165,250,0.15);color:var(--blue)}
-.tag.type-team{background:rgba(251,146,60,0.15);color:var(--orange)}
 
-/* TASK DELETE */
-.task-delete{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:16px;transition:all .2s;flex-shrink:0;opacity:0}
-.task:hover .task-delete,.task:active .task-delete{opacity:1}
-.task-delete:hover{color:var(--red);background:rgba(255,107,107,0.1)}
+/* ======================== VICTORIA BUTTONS ======================== */
+.victoria-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 14px;border:none;border-radius:var(--radius);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.victoria-btn.can-do{background:oklch(from var(--primary) l c h / 0.15);color:var(--primary);border:1px solid oklch(from var(--primary) l c h / 0.25)}
+.victoria-btn.can-do:active{transform:scale(0.97);background:oklch(from var(--primary) l c h / 0.25)}
+.victoria-btn.guide{background:oklch(from var(--accent) l c h / 0.1);color:var(--accent);border:1px solid oklch(from var(--accent) l c h / 0.2)}
+.victoria-btn.guide:active{transform:scale(0.97);background:oklch(from var(--accent) l c h / 0.2)}
 
-/* ADD TASK */
-.add-task-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;margin-top:8px;border-radius:12px;border:1px dashed rgba(255,255,255,0.1);background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .3s;font-family:inherit}
-.add-task-btn:hover{border-color:rgba(201,164,76,0.3);color:var(--gold2)}
-
-/* ADD FORM */
-.add-form{display:none;margin-top:8px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid var(--border)}
-.add-form.show{display:block;animation:fadeIn .3s ease}
-.add-form input,.add-form textarea,.add-form select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:8px;outline:none;transition:border-color .3s}
-.add-form input:focus,.add-form textarea:focus{border-color:rgba(201,164,76,0.4)}
-.add-form textarea{resize:none;height:60px}
-.add-form select{appearance:none;-webkit-appearance:none}
+/* ======================== ADD FORM ======================== */
+.add-task-btn{width:100%;padding:12px;border:1px dashed var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:8px}
+.add-task-btn:active{background:var(--surface)}
+.add-form{display:none;padding:12px 0}
+.add-form.show{display:block}
+.add-form input,.add-form textarea,.add-form select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:8px;transition:border-color .2s}
+.add-form input:focus,.add-form textarea:focus,.add-form select:focus{outline:none;border-color:var(--primary)}
+.add-form textarea{min-height:60px;resize:vertical}
 .form-row{display:flex;gap:8px}
-.form-row>*{flex:1}
-.btn{padding:10px 16px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .3s}
-.btn-gold{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#0B0D17}
+.form-row select{flex:1}
+
+/* ======================== BUTTONS ======================== */
+.btn{padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;border:none}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--primary);color:var(--primary-fg)}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
 
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(11,13,23,0.95),#0B0D17);border-top:1px solid var(--border);display:flex;justify-content:center;gap:32px;padding:10px 0 calc(10px + var(--safe-bottom));z-index:100}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;transition:all .3s;opacity:0.5}
-.nav-item.active{opacity:1}
-.nav-item .icon{font-size:22px}
-.nav-item .label{font-size:10px;font-weight:600}
-.nav-item.active .label{color:var(--gold2)}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:linear-gradient(180deg,#1C2333,#161B2E);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;padding:24px 20px calc(20px + var(--safe-bottom));animation:slideUp .3s ease}
-.modal h3{font-size:18px;font-weight:700;margin-bottom:16px}
-
-/* FINANCE VIEW */
-.finance-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px}
-.finance-card h4{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
-.finance-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
-.finance-row:last-child{border-bottom:none}
-.finance-row .label{color:var(--text2);font-size:13px}
-.finance-row .value{font-weight:700;font-size:14px}
+/* ======================== FINANCE ======================== */
+.finance-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.finance-card h4{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)}
+.finance-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.finance-row .label{color:var(--text2)}
+.finance-row .value{font-weight:700;color:var(--text)}
 .finance-row .value.green{color:var(--green)}
 .finance-row .value.red{color:var(--red)}
 
-/* TOAST */
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card-solid);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+/* ======================== NAV ======================== */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card-bg);border-top:1px solid var(--border);display:flex;justify-content:center;gap:0;padding:8px 0 calc(8px + var(--safe-bottom));z-index:50;transition:background .3s}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 24px;cursor:pointer;transition:color .2s;color:var(--text3)}
+.nav-item.active{color:var(--primary)}
+.nav-item .icon{font-size:20px}
+.nav-item .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+
+/* ======================== TOAST / MODAL ======================== */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:var(--radius);font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:360px;width:90%;box-shadow:var(--shadow)}
 
-/* ANIMATIONS */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+/* ======================== ANIMATIONS ======================== */
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* SPLASH */
-#splash{position:fixed;inset:0;z-index:9999;background:#0B0D17;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease}
-@keyframes pulseGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+/* Tag fallback for browsers without oklch relative */
+@supports not (background: oklch(from red l c h / 0.5)) {
+  .tag.priority-high{background:rgba(210,80,80,0.15);color:#d25050}
+  .tag.priority-med{background:rgba(200,170,50,0.15);color:#c8aa32}
+  .tag.priority-low{background:rgba(80,130,210,0.15);color:#5082d2}
+  .tag.type-seo{background:rgba(100,180,200,0.15);color:#64b4c8}
+  .tag.type-sales{background:rgba(80,200,140,0.15);color:#50c88c}
+  .tag.type-product{background:rgba(210,150,80,0.15);color:#d29650}
+  .tag.type-marketing{background:rgba(160,100,220,0.15);color:#a064dc}
+  .tag.type-team{background:rgba(210,150,80,0.15);color:#d29650}
+  .victoria-btn.can-do{background:rgba(160,100,220,0.15);color:#a064dc;border:1px solid rgba(160,100,220,0.3)}
+  .victoria-btn.guide{background:rgba(100,180,200,0.12);color:#64b4c8;border:1px solid rgba(100,180,200,0.25)}
+  .task-howto .step-num{background:rgba(160,100,220,0.15);color:#a064dc}
+  .task-howto .tip{background:rgba(80,200,140,0.1)}
+}
 </style>
 </head>
 <body>
 
 <div id="splash">
-  <div style="font-size:60px;animation:pulseGlow 1.5s ease infinite">🚀</div>
-  <div style="margin-top:16px;font-size:28px;font-weight:900;background:linear-gradient(135deg,#C9A44C,#E8D07E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;animation:fadeIn .6s ease .3s forwards">PABLIKI</div>
-  <div style="margin-top:4px;font-size:13px;color:#7B8394;opacity:0;animation:fadeIn .6s ease .6s forwards">Growth Roadmap</div>
+  <h2>PABLIKI GROWTH</h2>
+  <p>Загрузка...</p>
 </div>
 
-<div class="container" id="app"></div>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
+<div id="app"></div>
 
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchView('roadmap')"><span class="icon">🗺️</span><span class="label">Roadmap</span></div>
@@ -199,10 +263,25 @@ body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xm
 <div class="toast" id="toast"></div>
 
 <script>
+// ===================== THEME =====================
+function getTheme(){
+  return localStorage.getItem('pabliki_theme') || 'dark';
+}
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('pabliki_theme', t);
+  document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeMetaColor').content = t === 'dark' ? '#1e1e2e' : '#eff1f5';
+}
+function toggleTheme(){
+  applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
+}
+applyTheme(getTheme());
+
 // ===================== DATA =====================
 const DEFAULT_PHASES = [
   {
-    id:'p1',name:'ФУНДАМЕНТ',icon:'🏗️',color:'#2DD4A8',months:'Месяц 1-2',
+    id:'p1',name:'ФУНДАМЕНТ',icon:'🏗️',color:'var(--chart1)',months:'Месяц 1-2',
     tasks:[
       {id:'t1',title:'Новое позиционирование: «Городская медиасеть»',desc:'Обновить тексты на сайте, КП, презентациях. Pabliki = билборды в лентах.',tags:['priority-high','type-marketing'],done:false},
       {id:'t2',title:'Починить robots.txt',desc:'Заменить your-production-domain.com на pabliki.kz',tags:['priority-high','type-seo'],done:false},
@@ -222,7 +301,7 @@ const DEFAULT_PHASES = [
     ]
   },
   {
-    id:'p2',name:'РАЗГОН',icon:'🚀',color:'#60A5FA',months:'Месяц 3-4',
+    id:'p2',name:'РАЗГОН',icon:'🚀',color:'var(--chart2)',months:'Месяц 3-4',
     tasks:[
       {id:'t20',title:'10 SEO-статей',desc:'«Реклама в Алматы цены», «Продвижение бизнеса в Шымкенте» и т.д.',tags:['priority-high','type-seo'],done:false},
       {id:'t21',title:'5 видео-кейсов',desc:'YouTube + Reels: сравнение с билбордами, разборы результатов',tags:['priority-high','type-marketing'],done:false},
@@ -238,7 +317,7 @@ const DEFAULT_PHASES = [
     ]
   },
   {
-    id:'p3',name:'МАСШТАБИРОВАНИЕ',icon:'📈',color:'#A78BFA',months:'Месяц 5-6',
+    id:'p3',name:'МАСШТАБИРОВАНИЕ',icon:'📈',color:'var(--chart3)',months:'Месяц 5-6',
     tasks:[
       {id:'t40',title:'30 SEO-статей (итого)',desc:'Органика начинает давать стабильный поток лидов',tags:['priority-high','type-seo'],done:false},
       {id:'t41',title:'20+ агентств-партнёров',desc:'Каждое агентство = 5-10 заказов/мес',tags:['priority-high','type-sales'],done:false},
@@ -253,7 +332,7 @@ const DEFAULT_PHASES = [
     ]
   },
   {
-    id:'p4',name:'ДОМИНАЦИЯ',icon:'👑',color:'#E8D07E',months:'Месяц 7-12',
+    id:'p4',name:'ДОМИНАЦИЯ',icon:'👑',color:'var(--chart4)',months:'Месяц 7-12',
     tasks:[
       {id:'t60',title:'Доминация в HoReCa Алматы',desc:'50+ ресторанов используют Pabliki → стандарт отрасли',tags:['priority-high','type-sales'],done:false},
       {id:'t61',title:'Экспансия по нишам',desc:'Стоматологии → фитнес → авто → застройщики. Ниша за нишей.',tags:['priority-high','type-sales'],done:false},
@@ -396,7 +475,7 @@ t21:`<h5>🎬 Форматы видео</h5>
 
 t22:`<h5>🤝 Запуск партнёрки</h5>
 <div class="step"><div class="step-num">1</div><div class="step-text">Составить список 50 маркетинговых агентств КЗ (Алматы, Астана, Шымкент)</div></div>
-<div class="step"><div class="step-num">2</div><div class="step-text">Подготовить презентацию: 20% комиссия, white-label, готовые медиапланы</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Подготовить презентацию: 10-20% комиссия, white-label, готовые медиапланы</div></div>
 <div class="step"><div class="step-num">3</div><div class="step-text">Провести 10 личных встреч / zoom-презентаций</div></div>
 <div class="step"><div class="step-num">4</div><div class="step-text">Дать 5 лучшим агентствам пилотный бесплатный заказ для их клиента</div></div>
 <div class="step"><div class="step-num">5</div><div class="step-text">Создать Telegram-чат «Pabliki Partners» для быстрой коммуникации</div></div>
@@ -586,52 +665,19 @@ t67:`<h5>🏆 Финальная формула</h5>
 
 // ===================== VICTORIA AI =====================
 const VICTORIA_BOT = 'viktoriya_shtat_bot';
-// 'do' = Виктория может выполнить сама, 'guide' = даст инструкцию
 const VICTORIA_TASKS = {
-  t1:'do',   // Тексты позиционирования — написать
-  t2:'guide',// robots.txt — нужен доступ к коду сайта
-  t3:'guide',// h1 — нужен доступ к коду
-  t4:'guide',// canonical — нужен доступ к коду
-  t5:'do',   // JSON-LD разметка — сгенерирую код
-  t6:'do',   // meta descriptions — напишу тексты
-  t7:'guide',// 301 редиректы — нужен доступ к серверу
-  t8:'do',   // Программа Первая сотня — напишу план + тексты обращений
-  t9:'guide',// Калькулятор — нужна разработка на сайте
-  t11:'do',  // Ценовая политика — уже сделано (база-пабликов-новые-цены.xlsx)
-  t13:'guide',// Hero CTA — нужен доступ к коду
-  t14:'guide',// Цифры на экране — нужен доступ к коду
-  t15:'do',  // Пакетное ценообразование — напишу структуру + КП
-  t20:'do',  // 10 SEO-статей — напишу все 10
-  t22:'do',  // Партнёрская программа — напишу презентацию + условия
-  t25:'do',  // Фрейминг 3 канала — напишу все тексты + скрипты
-  t26:'do',  // Автоотчёт — сгенерирую шаблон PDF
-  t28:'do',  // Мастер-класс — напишу программу + презентацию
-  t40:'do',  // 30 SEO-статей — напишу
-  t43:'do',  // Годовые контракты — напишу предложение + договор
-  t46:'do',  // Digital Bridge — напишу заявку + презентацию
-  t47:'do',  // Forbes колонка — напишу статью
-  t48:'do',  // Программа лояльности — разработаю механику + условия
-  t60:'do',  // Доминация HoReCa — составлю список + скрипт обращения
-  t62:'do',  // Рейтинг городов — соберу данные + сделаю PDF
+  t1:'do',t2:'guide',t3:'guide',t4:'guide',t5:'do',t6:'do',t7:'guide',
+  t8:'do',t9:'guide',t11:'do',t13:'guide',t14:'guide',t15:'do',
+  t20:'do',t22:'do',t25:'do',t26:'do',t28:'do',
+  t40:'do',t43:'do',t46:'do',t47:'do',t48:'do',t60:'do',t62:'do',
 };
-
-const VICTORIA_LABELS = {
-  do: '🚀 Виктория, выполни',
-  guide: '📋 Инструкция от Виктории'
-};
-
-function getVictoriaCommand(taskId, title, type) {
-  if (type === 'do') {
-    return `Выполни задачу из Roadmap: "${title}" (ID: ${taskId}). Сделай полностью и покажи результат.`;
-  } else {
-    return `Дай подробную инструкцию по задаче из Roadmap: "${title}" (ID: ${taskId}). Что конкретно нужно сделать, пошагово.`;
-  }
-}
+const VICTORIA_LABELS = {do:'🚀 Виктория, выполни',guide:'📋 Инструкция от Виктории'};
 
 function victoriaAction(taskId, title, type) {
-  const text = getVictoriaCommand(taskId, title, type);
-  const url = `https://t.me/${VICTORIA_BOT}?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
+  const text = type === 'do'
+    ? `Выполни задачу из Roadmap: "${title}" (ID: ${taskId}). Сделай полностью и покажи результат.`
+    : `Дай подробную инструкцию по задаче из Roadmap: "${title}" (ID: ${taskId}). Что конкретно нужно сделать, пошагово.`;
+  window.open(`https://t.me/${VICTORIA_BOT}?text=${encodeURIComponent(text)}`, '_blank');
 }
 
 // ===================== STATE =====================
@@ -667,7 +713,6 @@ function renderRoadmap(app){
   const done = filtered.filter(t=>t.done).length;
   const total = filtered.length;
   const pct = total ? Math.round(done/total*100) : 0;
-
   const pending = allTasks.filter(t=>!t.done).length;
   const completed = allTasks.filter(t=>t.done).length;
 
@@ -707,7 +752,8 @@ function renderRoadmap(app){
     html += `
       <div class="phase ${isOpen?'open':''}">
         <div class="phase-header" onclick="togglePhase('${phase.id}')">
-          <div class="phase-icon" style="background:${phase.color}22">${phase.icon}</div>
+          <div class="phase-icon" style="background:${phase.color};opacity:0.15;position:absolute;inset:0;border-radius:10px"></div>
+          <div class="phase-icon" style="position:relative;color:${phase.color}">${phase.icon}</div>
           <div class="phase-info">
             <h3>${phase.name}</h3>
             <div class="meta">${phase.months} • ${pd}/${pt} задач</div>
@@ -736,7 +782,7 @@ function renderRoadmap(app){
               </select>
             </div>
             <div class="form-row" style="margin-top:4px">
-              <button class="btn btn-gold" onclick="addTask('${phase.id}')">Добавить</button>
+              <button class="btn btn-primary" onclick="addTask('${phase.id}')">Добавить</button>
               <button class="btn btn-ghost" onclick="hideAddForm('${phase.id}')">Отмена</button>
             </div>
           </div>
@@ -793,7 +839,7 @@ function renderFinance(app){
       <div class="finance-row"><span class="label">Налог ИП 10%</span><span class="value red">−10 000 000₸</span></div>
       <div class="finance-row"><span class="label">Оператор (фикс)</span><span class="value red">−500 000₸</span></div>
       <div class="finance-row"><span class="label">Соц отчисления</span><span class="value red">−80 000₸</span></div>
-      <div class="finance-row" style="border-top:2px solid rgba(255,255,255,0.1);padding-top:12px;margin-top:4px">
+      <div class="finance-row" style="border-top:2px solid var(--border);padding-top:12px;margin-top:4px">
         <span class="label" style="font-weight:700;color:var(--text)">Чистая прибыль</span>
         <span class="value green" style="font-size:18px">41 437 000₸</span>
       </div>
@@ -802,7 +848,7 @@ function renderFinance(app){
     <div class="finance-card">
       <h4>📦 Пакеты</h4>
       <div class="finance-row"><span class="label">🏙️ Город (10-15 пабликов)</span><span class="value">300-500К₸</span></div>
-      <div class="finance-row"><span class="label">🌆 Регион (3-5 городов)</span><span class="value" style="color:var(--gold2)">800К-1.2М₸</span></div>
+      <div class="finance-row"><span class="label">🌆 Регион (3-5 городов)</span><span class="value" style="color:var(--primary)">800К-1.2М₸</span></div>
       <div class="finance-row"><span class="label">🇰🇿 Казахстан (все)</span><span class="value">2-3М₸</span></div>
     </div>
     <div class="finance-card">
@@ -840,19 +886,26 @@ function renderSettings(app){
       <h4>📊 Статистика</h4>
       <div class="finance-row"><span class="label">Всего задач</span><span class="value">${allTasks.length}</span></div>
       <div class="finance-row"><span class="label">Выполнено</span><span class="value green">${done}</span></div>
-      <div class="finance-row"><span class="label">Осталось</span><span class="value" style="color:var(--orange)">${allTasks.length - done}</span></div>
+      <div class="finance-row"><span class="label">Осталось</span><span class="value" style="color:var(--peach)">${allTasks.length - done}</span></div>
+    </div>
+    <div class="finance-card">
+      <h4>🎨 Тема</h4>
+      <div style="display:flex;gap:8px">
+        <button class="btn ${getTheme()==='dark'?'btn-primary':'btn-ghost'}" style="flex:1" onclick="applyTheme('dark')">🌙 Тёмная</button>
+        <button class="btn ${getTheme()==='light'?'btn-primary':'btn-ghost'}" style="flex:1" onclick="applyTheme('light')">☀️ Светлая</button>
+      </div>
     </div>
     <div class="finance-card">
       <h4>💾 Данные</h4>
-      <button class="btn btn-gold" style="width:100%;margin-bottom:8px" onclick="exportData()">📥 Экспорт (JSON)</button>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="exportData()">📥 Экспорт (JSON)</button>
       <label class="btn btn-ghost" style="width:100%;display:block;text-align:center;margin-bottom:8px;cursor:pointer">
         📤 Импорт
         <input type="file" accept=".json" style="display:none" onchange="importData(event)">
       </label>
-      <button class="btn btn-ghost" style="width:100%;color:var(--red);border-color:rgba(255,107,107,0.3)" onclick="resetData()">🗑 Сбросить всё</button>
+      <button class="btn btn-ghost" style="width:100%;color:var(--red);border-color:var(--red)" onclick="resetData()">🗑 Сбросить всё</button>
     </div>
     <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">
-      Pabliki Growth Roadmap v1.0<br>
+      Pabliki Growth Roadmap v2.0 — Catppuccin<br>
       Создано Викторией для Рами 💫
     </div>
   `;
@@ -910,27 +963,13 @@ function addTask(phaseId){
   const type = document.getElementById('input-type-'+phaseId).value;
   const phase = state.phases.find(p=>p.id===phaseId);
   if(!phase) return;
-  phase.tasks.push({
-    id: 'c'+Date.now(),
-    title, desc,
-    tags: [priority, type],
-    done: false
-  });
+  phase.tasks.push({id:'c'+Date.now(),title,desc,tags:[priority,type],done:false});
   saveState(); render();
   showToast('✅ Задача добавлена');
 }
 
-function setFilter(f){
-  currentFilter = f;
-  render();
-}
-
-function switchView(view){
-  currentView = view;
-  render();
-  window.scrollTo(0,0);
-}
-
+function setFilter(f){ currentFilter = f; render(); }
+function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
     const views = ['roadmap','finance','settings'];
@@ -949,7 +988,6 @@ function closeModal(e){
   if(e.target.id==='modalOverlay') document.getElementById('modalOverlay').classList.remove('show');
 }
 
-// ===================== DATA MANAGEMENT =====================
 function exportData(){
   const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
@@ -988,7 +1026,7 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     const s = document.getElementById('splash');
     if(s){s.style.opacity='0'; setTimeout(()=>s.remove(), 600);}
-  }, 1500);
+  }, 1200);
   render();
 });
 </script>
