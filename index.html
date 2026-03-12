@@ -1067,6 +1067,7 @@ function resetData(){
 
 // ===================== SELECTION / ПОДБОРКА =====================
 let selCity = 'all';
+let selCat = 'all';
 let selMode = 'client'; // client | full
 let selMinSubs = 0;
 let selMaxPrice = 10000000;
@@ -1075,6 +1076,7 @@ let selSelected = new Set();
 function getFilteredPabliki(){
   return PABLIKI_DB.filter(p => {
     if(selCity !== 'all' && p.c !== selCity) return false;
+    if(selCat !== 'all' && p.t !== selCat) return false;
     if(p.s < selMinSubs) return false;
     if(p.p > selMaxPrice) return false;
     return true;
@@ -1096,6 +1098,11 @@ function renderSelection(app){
   const cityOptions = ['all', ...PABLIKI_CITIES].map(c => 
     `<button class="city-chip ${selCity===c?'active':''}" onclick="selCity='${c}';render()">${c==='all'?'Все города':c}</button>`
   ).join('');
+  
+  const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
+  const catOptions = ['all', ...PABLIKI_CATS].map(c =>
+    `<button class="city-chip ${selCat===c?'active':''}" onclick="selCat='${c}';render()">${c==='all'?'Все категории':(catIcons[c]||'')+ ' ' +c}</button>`
+  ).join('');
 
   let tableHead, tableRows;
   
@@ -1104,27 +1111,31 @@ function renderSelection(app){
   const hasMore = filtered.length > showLimit;
   
   if(selMode === 'client'){
-    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th class="num">Подписчики</th><th class="num">Цена</th></tr>`;
+    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th>Кат.</th><th class="num">Подп.</th><th class="num">Цена</th></tr>`;
     tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
+      const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
-        <td>${p.c}</td>
+        <td style="font-size:10.5px">${p.c}</td>
         <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
+        <td style="font-size:10px">${ci[p.t]||''}</td>
         <td class="num">${fmt(p.s)}</td>
         <td class="num">${fmt(p.p)}₸</td>
       </tr>`;
     }).join('');
   } else {
-    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th class="num">Подписчики</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">Маржа</th></tr>`;
+    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th>Кат.</th><th class="num">Подп.</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">%</th></tr>`;
     tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
       const margin = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
       const mColor = margin >= 50 ? 'var(--green)' : margin >= 30 ? 'var(--yellow)' : 'var(--red)';
+      const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
-        <td>${p.c}</td>
+        <td style="font-size:10.5px">${p.c}</td>
         <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
+        <td style="font-size:10px">${ci[p.t]||''}</td>
         <td class="num">${fmt(p.s)}</td>
         <td class="num">${fmt(p.co)}₸</td>
         <td class="num">${fmt(p.p)}₸</td>
@@ -1147,6 +1158,11 @@ function renderSelection(app){
     <div class="filter-section">
       <h4>🏙️ Город</h4>
       <div class="city-chips">${cityOptions}</div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>📂 Категория</h4>
+      <div class="city-chips">${catOptions}</div>
     </div>
     
     <div class="filter-section">
@@ -1174,7 +1190,7 @@ function renderSelection(app){
     </div>
     <div class="sel-actions">
       <button class="btn btn-primary" onclick="exportSelPDF()">📄 PDF</button>
-      <button class="btn btn-ghost" onclick="shareSel()">🔗 Поделиться</button>
+      <button class="btn btn-ghost" onclick="shareSel()">📤 Отправить</button>
       <button class="btn btn-ghost" onclick="selSelected.clear();render()">✕ Сбросить</button>
     </div>
     ` : ''}
@@ -1210,11 +1226,13 @@ function exportSelPDF(){
   const isClient = selMode === 'client';
   const date = new Date().toLocaleDateString('ru-RU');
   
+  const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
   let rows = selected.map((p,i) => `
     <tr>
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${i+1}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1f2937">${p.c}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#2563eb;font-weight:500">@${p.ig}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${catIcons[p.t]||''} ${p.t||''}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-variant-numeric:tabular-nums">${fmt(p.s)}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${fmt(p.p)}₸</td>
     </tr>
@@ -1235,7 +1253,7 @@ function exportSelPDF(){
     .stat .l{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
     table{width:100%;border-collapse:collapse;margin-top:16px}
     th{padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff}
-    th:nth-child(4),th:nth-child(5){text-align:right}
+    th:nth-child(5),th:nth-child(6){text-align:right}
     .footer{text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af}
     @media print{.page{padding:20px}}
   </style></head><body>
@@ -1251,11 +1269,11 @@ function exportSelPDF(){
     </div>
     <table>
       <thead><tr>
-        <th>№</th><th>Город</th><th>Instagram</th><th style="text-align:right">Подписчики</th><th style="text-align:right">Цена (пост+сторис)</th>
+        <th>№</th><th>Город</th><th>Instagram</th><th>Категория</th><th style="text-align:right">Подписчики</th><th style="text-align:right">Цена (пост+сторис)</th>
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="3" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
+        <td colspan="4" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
         <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
         <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
       </tr></tfoot>
@@ -1275,18 +1293,29 @@ function exportSelPDF(){
 function shareSel(){
   const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
   if(!selected.length){showToast('Выберите паблики');return;}
+  
+  // Generate PDF HTML in hidden iframe, print to PDF, share as file
   const fmt = n => n.toLocaleString('ru-RU');
   const totalSubs = selected.reduce((s,p) => s + p.s, 0);
   const totalPrice = selected.reduce((s,p) => s + p.p, 0);
+  const date = new Date().toLocaleDateString('ru-RU');
+  const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
   
-  let text = `📋 МЕДИАПЛАН PABLIKI.KZ\n${selected.length} пабликов · ${fmt(totalSubs)} подписчиков\n\n`;
-  selected.forEach((p,i) => {
-    text += `${i+1}. @${p.ig} (${p.c}) — ${fmt(p.s)} подп. — ${fmt(p.p)}₸\n`;
-  });
-  text += `\n💰 Итого: ${fmt(totalPrice)}₸\n\npabliki.kz`;
+  const rows = selected.map((p,i) => 
+    `${i+1}. @${p.ig} (${p.c}) ${catIcons[p.t]||''} — ${fmt(p.s)} подп. — ${fmt(p.p)}₸`
+  ).join('\n');
   
-  if(navigator.share){
-    navigator.share({title:'Медиаплан Pabliki.kz',text}).catch(()=>{});
+  const text = `📋 МЕДИАПЛАН PABLIKI.KZ\n${date}\n\n${selected.length} пабликов · ${fmt(totalSubs)} подписчиков\n\n${rows}\n\n💰 Итого: ${fmt(totalPrice)}₸\n\n🌐 pabliki.kz · +7 777 151 6166`;
+  
+  if(navigator.share && navigator.canShare){
+    // Try sharing as file
+    const blob = new Blob([text], {type:'text/plain'});
+    const file = new File([blob], `mediaplan-pabliki-${new Date().toISOString().slice(0,10)}.txt`, {type:'text/plain'});
+    if(navigator.canShare({files:[file]})){
+      navigator.share({title:'Медиаплан Pabliki.kz', files:[file]}).catch(()=>{});
+    } else {
+      navigator.share({title:'Медиаплан Pabliki.kz', text}).catch(()=>{});
+    }
   } else {
     navigator.clipboard.writeText(text).then(()=>showToast('📋 Скопировано!')).catch(()=>{});
   }
