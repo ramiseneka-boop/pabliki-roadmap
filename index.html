@@ -100,6 +100,11 @@ body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xm
 .task-howto .tip{margin-top:8px;padding:8px 10px;background:rgba(45,212,168,0.08);border-radius:8px;border-left:3px solid var(--green);font-size:11.5px;color:var(--green)}
 .task-expand-hint{font-size:11px;color:var(--text3);margin-top:4px;transition:opacity .3s}
 .task.expanded .task-expand-hint{opacity:0;height:0;margin:0;overflow:hidden}
+.victoria-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 14px;border:none;border-radius:10px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.victoria-btn.can-do{background:linear-gradient(135deg,rgba(201,164,76,0.2),rgba(232,208,126,0.12));color:var(--gold2);border:1px solid rgba(201,164,76,0.25)}
+.victoria-btn.can-do:active{transform:scale(0.97);background:linear-gradient(135deg,rgba(201,164,76,0.35),rgba(232,208,126,0.2))}
+.victoria-btn.guide{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
+.victoria-btn.guide:active{transform:scale(0.97);background:rgba(96,165,250,0.2)}
 .task-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .tag{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
 .tag.priority-high{background:rgba(255,107,107,0.15);color:var(--red)}
@@ -579,6 +584,56 @@ t67:`<h5>🏆 Финальная формула</h5>
 <div class="tip">💡 Это не мечта — это математика. Каждый канал проверяем, каждая цифра обоснована.</div>`
 };
 
+// ===================== VICTORIA AI =====================
+const VICTORIA_BOT = 'viktoriya_shtat_bot';
+// 'do' = Виктория может выполнить сама, 'guide' = даст инструкцию
+const VICTORIA_TASKS = {
+  t1:'do',   // Тексты позиционирования — написать
+  t2:'guide',// robots.txt — нужен доступ к коду сайта
+  t3:'guide',// h1 — нужен доступ к коду
+  t4:'guide',// canonical — нужен доступ к коду
+  t5:'do',   // JSON-LD разметка — сгенерирую код
+  t6:'do',   // meta descriptions — напишу тексты
+  t7:'guide',// 301 редиректы — нужен доступ к серверу
+  t8:'do',   // Программа Первая сотня — напишу план + тексты обращений
+  t9:'guide',// Калькулятор — нужна разработка на сайте
+  t11:'do',  // Ценовая политика — уже сделано (база-пабликов-новые-цены.xlsx)
+  t13:'guide',// Hero CTA — нужен доступ к коду
+  t14:'guide',// Цифры на экране — нужен доступ к коду
+  t15:'do',  // Пакетное ценообразование — напишу структуру + КП
+  t20:'do',  // 10 SEO-статей — напишу все 10
+  t22:'do',  // Партнёрская программа — напишу презентацию + условия
+  t25:'do',  // Фрейминг 3 канала — напишу все тексты + скрипты
+  t26:'do',  // Автоотчёт — сгенерирую шаблон PDF
+  t28:'do',  // Мастер-класс — напишу программу + презентацию
+  t40:'do',  // 30 SEO-статей — напишу
+  t43:'do',  // Годовые контракты — напишу предложение + договор
+  t46:'do',  // Digital Bridge — напишу заявку + презентацию
+  t47:'do',  // Forbes колонка — напишу статью
+  t48:'do',  // Программа лояльности — разработаю механику + условия
+  t60:'do',  // Доминация HoReCa — составлю список + скрипт обращения
+  t62:'do',  // Рейтинг городов — соберу данные + сделаю PDF
+};
+
+const VICTORIA_LABELS = {
+  do: '🚀 Виктория, выполни',
+  guide: '📋 Инструкция от Виктории'
+};
+
+function getVictoriaCommand(taskId, title, type) {
+  if (type === 'do') {
+    return `Выполни задачу из Roadmap: "${title}" (ID: ${taskId}). Сделай полностью и покажи результат.`;
+  } else {
+    return `Дай подробную инструкцию по задаче из Roadmap: "${title}" (ID: ${taskId}). Что конкретно нужно сделать, пошагово.`;
+  }
+}
+
+function victoriaAction(taskId, title, type) {
+  const text = getVictoriaCommand(taskId, title, type);
+  const url = `https://t.me/${VICTORIA_BOT}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
 // ===================== STATE =====================
 let state = loadState();
 let currentView = 'roadmap';
@@ -700,6 +755,8 @@ function renderTask(t, phaseId){
   }).join('');
   const howto = HOWTO[t.id] || t.howto || '';
   const isExpanded = expandedTasks[t.id];
+  const vType = VICTORIA_TASKS[t.id];
+  const vBtn = vType && !t.done ? `<button class="victoria-btn ${vType === 'do' ? 'can-do' : 'guide'}" onclick="event.stopPropagation();victoriaAction('${t.id}',\`${t.title.replace(/`/g,"'")}\`,'${vType}')">${VICTORIA_LABELS[vType]}</button>` : '';
   return `
     <div class="task ${t.done?'done':''} ${isExpanded?'expanded':''}">
       <div class="task-check" onclick="toggleTask('${phaseId}','${t.id}')"></div>
@@ -707,6 +764,7 @@ function renderTask(t, phaseId){
         <div class="task-title">${t.title}</div>
         ${t.desc ? `<div class="task-desc">${t.desc}</div>` : ''}
         <div class="task-tags">${tagsHtml}</div>
+        ${vBtn}
         ${howto ? '<div class="task-expand-hint">▼ Нажми — как реализовать</div>' : ''}
         ${howto ? `<div class="task-howto">${howto}</div>` : ''}
       </div>
