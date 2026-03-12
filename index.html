@@ -87,6 +87,19 @@ body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xm
 .task-title{font-size:14px;font-weight:500;line-height:1.4}
 .task.done .task-title{text-decoration:line-through;color:var(--text2)}
 .task-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4}
+.task-content{cursor:pointer}
+.task-howto{display:none;margin-top:10px;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:12.5px;color:var(--text2);line-height:1.7}
+.task.expanded .task-howto{display:block;animation:fadeIn .3s ease}
+.task-howto h5{color:var(--gold2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.task-howto p{margin-bottom:8px}
+.task-howto ul{margin:6px 0 10px 16px}
+.task-howto li{margin-bottom:4px}
+.task-howto .step{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.task-howto .step-num{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,rgba(201,164,76,0.2),rgba(232,208,126,0.1));color:var(--gold2);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.task-howto .step-text{flex:1;color:var(--text)}
+.task-howto .tip{margin-top:8px;padding:8px 10px;background:rgba(45,212,168,0.08);border-radius:8px;border-left:3px solid var(--green);font-size:11.5px;color:var(--green)}
+.task-expand-hint{font-size:11px;color:var(--text3);margin-top:4px;transition:opacity .3s}
+.task.expanded .task-expand-hint{opacity:0;height:0;margin:0;overflow:hidden}
 .task-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .tag{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
 .tag.priority-high{background:rgba(255,107,107,0.15);color:var(--red)}
@@ -249,10 +262,328 @@ const DEFAULT_PHASES = [
   }
 ];
 
+// ===================== HOWTO DATA =====================
+const HOWTO = {
+t1:`<h5>🎯 Как реализовать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Заменить на сайте все упоминания «размещение в пабликах» на «городская реклама нового поколения»</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Обновить заголовок на главной: <b>«Билборды в лентах 10 млн казахстанцев»</b></div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Переписать КП и презентации — конкурент теперь не таргет, а билборды и ТВ</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Обновить скрипт продаж: сравнивать с билбордами по цене за охват</div></div>
+<div class="tip">💡 Ключевой фрейм: «Таргет + Контекст + Городские паблики = 3 обязательных канала»</div>`,
+
+t2:`<h5>🔧 Как исправить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Открыть файл <b>public/robots.txt</b> в проекте pabliki.kz</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Заменить <b>your-production-domain.com</b> на <b>pabliki.kz</b></div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Должно быть: <code>Sitemap: https://pabliki.kz/sitemap.xml</code></div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Задеплоить изменение</div></div>
+<div class="tip">💡 Без этого Google не находит карту сайта. Фикс за 2 минуты, эффект — огромный.</div>`,
+
+t3:`<h5>🔧 Как исправить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Найти главный заголовок на landing page (сейчас &lt;h2&gt;)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Заменить тег на &lt;h1&gt; — на странице должен быть ровно один &lt;h1&gt;</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Проверить все остальные страницы — каждая должна иметь свой уникальный &lt;h1&gt;</div></div>
+<div class="tip">💡 Google использует h1 как главный сигнал о содержании страницы. Без него SEO страдает.</div>`,
+
+t4:`<h5>🔧 Как добавить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">В Next.js добавить в layout или metadata каждой страницы:</div></div>
+<p><code>&lt;link rel="canonical" href="https://pabliki.kz/ru" /&gt;</code></p>
+<div class="step"><div class="step-num">2</div><div class="step-text">Каждая языковая версия указывает canonical на себя</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">/ru, /en, /kk — каждая со своим canonical</div></div>
+<div class="tip">💡 Без canonical Google может считать /ru и /en дублями и понижать обе страницы.</div>`,
+
+t5:`<h5>🔧 Как добавить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Добавить в &lt;head&gt; главной страницы скрипт JSON-LD:</div></div>
+<p><b>Organization:</b> название, лого, контакты, соцсети</p>
+<p><b>LocalBusiness:</b> адрес в КЗ, телефон, часы работы</p>
+<p><b>FAQ:</b> популярные вопросы — «Сколько стоит реклама?», «Как разместиться?» и т.д.</p>
+<div class="step"><div class="step-num">2</div><div class="step-text">Проверить через <b>search.google.com/test/rich-results</b></div></div>
+<div class="tip">💡 FAQ schema может дать расширенные сниппеты в Google — больше места в выдаче бесплатно.</div>`,
+
+t6:`<h5>🔧 Как сделать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Главная: «Pabliki.kz — городская реклама в 700+ пабликах Казахстана. 14 регионов, 93М+ охвата.»</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Контакты: «Связаться с Pabliki.kz — менеджер ответит за 5 минут. WhatsApp, телефон, email.»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Каждая статья в блоге — уникальный description по содержанию</div></div>
+<div class="tip">💡 Description = рекламный текст в Google. 150-160 символов, с призывом к действию.</div>`,
+
+t7:`<h5>🔧 Как исправить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">В Next.js middleware или конфиге: поменять все 307 (temporary) на 301 (permanent)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Проверить /ru/contacts → /contacts и аналогичные</div></div>
+<div class="tip">💡 307 = Google не передаёт SEO-вес. 301 = передаёт полностью. Разница в позициях.</div>`,
+
+t8:`<h5>🎯 План действий</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Составить список 20 узнаваемых брендов по нишам: 3 ресторана, 3 клиники, 3 автосалона, 3 фитнеса, 3 застройщика, 5 других</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Написать каждому в WhatsApp/Instagram: «Бесплатное размещение во всех пабликах вашего города. Взамен — логотип в «Нам доверяют» + видео-отзыв 30 сек»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">После размещения — собрать метрики (охват, клики, заявки)</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Оформить кейс: Было → Стало → ROI. С цифрами и скриншотами.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text">Выложить на сайт + использовать в КП</div></div>
+<div class="tip">💡 Бюджет ~2-3М₸ на себестоимость. Но 20 кейсов в 20 нишах = конверсия КП вырастет в 3 раза.</div>`,
+
+t9:`<h5>⚡ Как сделать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Страница на сайте: 3 поля — Город, Ниша, Бюджет</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Алгоритм подбирает паблики из базы, считает охват и прогноз заявок</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Результат: «15 пабликов, 2.5М подписчиков, ~500К просмотров за 3 дня»</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Для получения PDF — ввести email (лидген!)</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text">Добавить сравнение: «Это как 3 билборда на месяц, но в 5 раз дешевле»</div></div>
+<div class="tip">💡 Калькулятор = и SEO-инструмент, и лидген, и конвертер. Клиент сам себе «продаёт».</div>`,
+
+t10:`<h5>👥 Как нанять и запустить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Профиль: опыт в B2B продажах, КЗ рынок, уверенный в холодных звонках. ЗП: 200-300К₸ фикс + % от закрытых сделок</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Дать базу: спарсить все компании КЗ с Instagram 1000+ подписчиков</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Скрипт: 1) Персональный разбор их рекламы → 2) Кейс из ниши → 3) Бесплатный медиаплан</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">KPI: 50 касаний/день, 10 квалифицированных лидов/неделя</div></div>
+<div class="tip">💡 Не «купите размещение», а «мы подготовили для вас медиаплан — можем показать?»</div>`,
+
+t11:`<h5>💰 Что сделать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Обновлённая база уже готова — файл «база-пабликов-новые-цены.xlsx»</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Загрузить новые цены в систему Pabliki.kz</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Правила: крупные паблики (500К₸+) — наценка мин 80%, средние — 100%, мелкие — 150%</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Минимальная цена = Себестоимость ÷ 0.55 (гарантирует 45% валовой маржи)</div></div>
+<div class="tip">💡 Эффект: +4.8М₸/мес чистой прибыли при 100 заказах, без единого нового клиента.</div>`,
+
+t12:`<h5>📋 Шаги</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Подать заявку через IP Guard (ipguard.kz) — свой проект</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Класс 35 (реклама) и класс 42 (IT-сервисы)</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Срок регистрации: 12-14 месяцев, но приоритет с даты подачи</div></div>
+<div class="tip">💡 Защита от копирования бренда. Плюс: можно использовать значок ® в маркетинге — добавляет доверия.</div>`,
+
+t13:`<h5>⚡ Как сделать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Добавить на первый экран большую кнопку: <b>«Собрать подборку бесплатно →»</b></div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Кнопка ведёт на квиз vsepabliki.kz/kvizpbkz или на калькулятор</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Цвет — контрастный (жёлтый/оранжевый на синем фоне)</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Добавить подтекст: «Бесплатно • Без регистрации • За 30 секунд»</div></div>
+<div class="tip">💡 Сейчас на hero нет CTA для новых клиентов — только «Личный кабинет» для существующих. Теряете конверсии.</div>`,
+
+t14:`<h5>📊 Как добавить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Блок под hero: три крупных числа в ряд</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><b>700+</b> пабликов • <b>14</b> регионов • <b>93M+</b> просмотров</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Анимация счётчика при скролле (countUp.js или CSS)</div></div>
+<div class="tip">💡 Цифры = мгновенное доверие. Посетитель за 2 секунды понимает масштаб.</div>`,
+
+t15:`<h5>💰 Структура пакетов</h5>
+<p><b>🏙️ ГОРОД</b> — 1 город, 10-15 пабликов, пост+сторис, 1 волна → <b>300-500К₸</b></p>
+<p><b>🌆 РЕГИОН</b> — 3-5 городов, 2 волны, аналитика → <b>800К-1.2М₸</b> (целевой пакет)</p>
+<p><b>🇰🇿 КАЗАХСТАН</b> — все регионы, 4 волны, менеджер → <b>2-3М₸</b></p>
+<p><b>Аддоны:</b> WhatsApp-рассылка +200К, повторная волна +30%, видеопродакшн +150К, срочное (24ч) +20%</p>
+<div class="tip">💡 Якорь сверху (2.5М₸) делает средний пакет (1М₸) психологически «выгодным» — эффект приманки Ариели.</div>`,
+
+t20:`<h5>📝 План статей</h5>
+<ul>
+<li>«Реклама в Алматы: цены, каналы, сравнение 2026»</li>
+<li>«Как рекламировать ресторан в Астане — 5 рабочих каналов»</li>
+<li>«Реклама в Instagram пабликах Казахстана — полный гайд»</li>
+<li>«Продвижение бизнеса в Шымкенте — что работает»</li>
+<li>«Альтернатива билбордам: городские паблики»</li>
+<li>«Сколько стоит реклама в пабликах — калькулятор»</li>
+<li>«ТОП-10 пабликов Алматы по охвату»</li>
+<li>«Как выбрать паблик для рекламы — чеклист»</li>
+<li>«Кейс: 300 заявок за неделю из пабликов»</li>
+<li>«Таргет vs паблики: что эффективнее для локального бизнеса»</li>
+</ul>
+<div class="tip">💡 Каждая статья — 1500-2000 слов, с CTA на калькулятор/квиз. SEO-трафик начнёт расти через 2-3 месяца.</div>`,
+
+t21:`<h5>🎬 Форматы видео</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text"><b>Сравнение:</b> «500К на билборд vs 500К на Pabliki — результат» (60 сек)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><b>Обзор:</b> «Сколько стоит реклама в каждом городе КЗ» (3-5 мин)</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text"><b>Кейс:</b> «Как [бренд] получил 300 заявок за неделю» (2-3 мин)</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text"><b>Behind the scenes:</b> «Как работает Pabliki изнутри» (1-2 мин, Reels)</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text"><b>Отзывы:</b> клиенты на камеру (30 сек, вертикальный формат)</div></div>
+<div class="tip">💡 Один формат → нарезать для YouTube (длинный), Instagram Reels (60 сек), TikTok (30 сек).</div>`,
+
+t22:`<h5>🤝 Запуск партнёрки</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Составить список 50 маркетинговых агентств КЗ (Алматы, Астана, Шымкент)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Подготовить презентацию: 20% комиссия, white-label, готовые медиапланы</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Провести 10 личных встреч / zoom-презентаций</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Дать 5 лучшим агентствам пилотный бесплатный заказ для их клиента</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text">Создать Telegram-чат «Pabliki Partners» для быстрой коммуникации</div></div>
+<div class="tip">💡 50 агентств × 5 клиентов = 250 потенциальных заказов/мес. Самый масштабируемый канал.</div>`,
+
+t23:`<h5>📊 Концепция</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Бесплатный инструмент: ввести название бренда / Instagram</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Показать: «Ваш бренд видят только 12% жителей Алматы»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Сравнение с конкурентами: «А вот [конкурент] охватывает 45%»</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">CTA: «Увеличить охват до 80% → подобрать паблики»</div></div>
+<div class="tip">💡 Создаёт FOMO. Клиент видит проблему, которую раньше не осознавал → мотивация к покупке.</div>`,
+
+t24:`<h5>🤖 Архитектура бота</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Старт: «В каком городе нужна реклама?» → кнопки с городами</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">«Какая ниша?» → рестораны, клиники, авто и т.д.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">«Бюджет?» → 300К / 500К / 1М / Свой</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Мгновенная подборка из базы → PDF</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text">«Оплатить» → Kaspi Pay ссылка</div></div>
+<div class="tip">💡 Казахстан = Telegram-страна. Минимальный порог входа для МСБ. Может дать 20-30% конверсии на малых чеках.</div>`,
+
+t25:`<h5>📣 Как внедрить</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Добавить фрейм на сайт, во все КП, во все презентации</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Использовать в каждом выступлении и интервью</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">SDR в каждом звонке: «Вы используете таргет и контекст? А третий обязательный канал?»</div></div>
+<p>Формула: <b>Таргет</b> (точечно) + <b>Контекст</b> (горячий спрос) + <b>Городские паблики</b> (массовый охват) = полный охват.</p>
+<div class="tip">💡 Категорийный маркетинг из «Play Bigger». Повторяй пока это не станет «общеизвестным фактом».</div>`,
+
+t26:`<h5>📄 Структура отчёта</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Автоматическая генерация PDF через 7 дней после размещения</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Метрики: охват, просмотры, вовлечённость, клики (если UTM)</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Сравнение с бенчмарками: «Ваш охват на 30% выше среднего по нише»</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Рекомендация: «Для закрепления эффекта — повторная волна через 2 недели»</div></div>
+<div class="tip">💡 Отчёт = апсейл на повторное размещение. Клиент видит результат → хочет ещё.</div>`,
+
+t27:`<h5>⭐ Как реализовать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">После каждого размещения — клиент оценивает паблик (1-5 звёзд)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Показывать: средний охват, скорость публикации, качество контента</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Бейджи: «Топ-10 Алматы», «Быстрая публикация», «Высокий охват»</div></div>
+<div class="tip">💡 Как Booking для отелей. Клиент доверяет рейтингам → проще принять решение.</div>`,
+
+t28:`<h5>🎤 Как провести</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Формат: вебинар 60 мин, бесплатный, запись в YouTube</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Тема: «Городские паблики в медиамиксе: кейсы, цифры, интеграция»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Пригласить 50 агентств через LinkedIn + Instagram + email</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">В конце: «Первым 10 агентствам — бесплатный пилот для вашего клиента»</div></div>
+<div class="tip">💡 Образовательный маркетинг. Агентства начнут включать Pabliki в медиапланы своих клиентов.</div>`,
+
+t29:`<h5>🚀 Шаги</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Связаться с Astana Hub / MOST Hub — предложить партнёрство</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Формат: бесплатный пилот для 10 стартапов из инкубатора</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Взамен: статус «Партнёр экосистемы» + доступ к мероприятиям</div></div>
+<div class="tip">💡 Стартапы растут → бюджеты растут → долгосрочные клиенты. Плюс PR и нетворкинг.</div>`,
+
+t30:`<h5>🎯 Как достичь</h5>
+<p>Микс каналов к концу 4-го месяца:</p>
+<ul>
+<li><b>10-15</b> заказов — SDR (холодные продажи)</li>
+<li><b>5-10</b> заказов — входящие с сайта (калькулятор, квиз)</li>
+<li><b>3-5</b> заказов — первые агентства</li>
+<li><b>2-5</b> заказов — повторные клиенты из «Первой сотни»</li>
+</ul>
+<div class="tip">💡 20-30 заказов × 1М₸ = 20-30М₸ выручки. Уже серьёзный бизнес.</div>`,
+
+t40:`<h5>📝 Стратегия</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Нанять копирайтера или использовать AI для драфтов + ручная доработка</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Приоритет: статьи по городам («реклама в [город] 2026») — низкая конкуренция</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Каждая статья: 1500-2000 слов, уникальные данные из базы Pabliki, CTA на калькулятор</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Внутренняя перелинковка: каждая статья ссылается на 3-5 других</div></div>
+<div class="tip">💡 SEO = бесплатный трафик через 3-6 месяцев. 30 статей могут давать 5000-10000 визитов/мес.</div>`,
+
+t41:`<h5>🎯 Тактика</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Из 50 целевых агентств к этому моменту должны быть активны 20+</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Еженедельный дайджест для партнёров: новые паблики, акции, кейсы</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Рейтинг партнёров: топ-3 получают бонусы (повышенная комиссия, эксклюзив)</div></div>
+<div class="tip">💡 20 агентств × 3 заказа/мес = 60 заказов. Это уже 60% от цели.</div>`,
+
+t42:`<h5>👥 Кого нанять</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text"><b>SDR #2:</b> дублирует первого, другой сегмент (другие города или ниши)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><b>AE (Account Executive):</b> закрывает сделки, проводит презентации, делает КП. ЗП: 300-500К₸ + % от сделок</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">SDR находит и квалифицирует → AE проводит встречу и закрывает</div></div>
+<div class="tip">💡 Разделение ролей из «Predictable Revenue»: SDR не должен закрывать, AE не должен искать.</div>`,
+
+t43:`<h5>💰 Структура</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Предложение: 12 ежемесячных размещений по фиксированной цене</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Скидка 25% от разового прайса</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Оплата: помесячно или поквартально (не сразу за год)</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Бонус: персональный менеджер + приоритетные слоты</div></div>
+<div class="tip">💡 Годовой контракт = предсказуемая выручка + высокий retention. Билборды именно так продаются.</div>`,
+
+t44:`<h5>⚡ Концепция</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Клиент загружает 2 варианта креатива (текст или картинку)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Система размещает вариант А в одних пабликах, вариант Б — в других</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Через 48 часов: отчёт — какой креатив дал больше охвата/кликов</div></div>
+<div class="tip">💡 Фича уровня Facebook Ads Manager. Ни один конкурент в КЗ этого не предлагает.</div>`,
+
+t45:`<h5>🔧 Что нужно</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">REST API: создание заказа, получение статуса, отчёты</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Webhook: уведомления при публикации и обновлении статистики</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Документация: Swagger/OpenAPI + примеры на Python/JS</div></div>
+<div class="tip">💡 API — ключ к масштабированию через агентства. Они интегрируют Pabliki в свои CRM.</div>`,
+
+t46:`<h5>🎤 Подготовка</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Подать заявку на спикера за 3 месяца (digital-bridge.kz)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Тема: «Почему 80% рекламных бюджетов в КЗ сливаются на билборды, которые никто не считает»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Подготовить: данные из собственной аналитики, 3 кейса с цифрами, сравнение ROI</div></div>
+<div class="tip">💡 Одно выступление перед 500 маркетологами = 50+ лидов. Плюс запись для YouTube.</div>`,
+
+t47:`<h5>📰 Как попасть</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Написать статью-колонку: 3000-4000 знаков, с данными и кейсами</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Отправить в Forbes.kz редактору раздела «Технологии» или «Маркетинг»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Альтернатива: Курсив.kz, Kapital.kz, Informburo</div></div>
+<div class="tip">💡 Бесплатный PR. Forbes = статус и доверие. Ссылку можно использовать в КП: «О нас писал Forbes».</div>`,
+
+t48:`<h5>🏆 Механика</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">3+ размещения → скидка 10% на все следующие</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">6+ → скидка 15% + приоритетные слоты в топ-пабликах</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">12+ → VIP-статус: персональный менеджер, бета-доступ к новым фичам, эксклюзивные паблики</div></div>
+<div class="tip">💡 Удержание дешевле привлечения в 5-7 раз. Лояльный клиент = повторные заказы без маркетинговых затрат.</div>`,
+
+t49:`<h5>🎯 Декомпозиция</h5>
+<ul>
+<li><b>20-25</b> заказов — SDR (2 человека × 10-12 сделок)</li>
+<li><b>15-20</b> заказов — агентства (20+ партнёров)</li>
+<li><b>10-15</b> заказов — входящие (SEO + контент + калькулятор)</li>
+<li><b>5-10</b> заказов — повторные клиенты</li>
+</ul>
+<div class="tip">💡 50-70 заказов × 1М₸ = 50-70М₸ выручки. Чистая прибыль ~18-26М₸/мес.</div>`,
+
+t60:`<h5>🍽️ Стратегия ниши</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Составить список всех ресторанов/кафе Алматы с Instagram (200-300 заведений)</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Предложить первым 10 — пилот со скидкой 50%</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Собрать кейсы → показать остальным: «Вот что получили ваши соседи»</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Когда 50+ ресторанов → это стандарт отрасли. «Все так делают»</div></div>
+<div class="tip">💡 Из «Crossing the Chasm»: доминируй в нише, потом расширяйся. HoReCa Алматы — идеальная первая ниша.</div>`,
+
+t61:`<h5>📋 Порядок ниш</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text"><b>HoReCa</b> (рестораны, кафе) — высокая частота, средний чек</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><b>Стоматологии</b> — высокий LTV, много сетей</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text"><b>Фитнес</b> — сезонный спрос, но агрессивный маркетинг</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text"><b>Автодилеры</b> — большие бюджеты, долгий цикл сделки</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text"><b>Застройщики</b> — максимальные бюджеты, годовые контракты</div></div>
+<div class="tip">💡 Каждая новая ниша = новый кейс = новый аргумент для следующей ниши. Эффект снежного кома.</div>`,
+
+t62:`<h5>📊 Как сделать</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Собрать данные из собственной аналитики: какие города самые активные, какие ниши</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Оформить в PDF: инфографика, карты, рейтинги</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Разослать медиа: Forbes.kz, Курсив, Telegram-каналы маркетологов</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">Публиковать ежеквартально → ждать от журналистов</div></div>
+<div class="tip">💡 PR через данные — из «Newsjacking». Медиа любят эксклюзивную аналитику и публикуют бесплатно.</div>`,
+
+t63:`<h5>🏦 Как подойти</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Связаться с отделом МСБ Kaspi / Halyk / Forte</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Предложение: «Бесплатная реклама в городских пабликах при открытии бизнес-счёта»</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Банк получает: ценность для клиентов. Pabliki получает: трафик + статус партнёра банка</div></div>
+<div class="tip">💡 Логотип «Партнёр Kaspi Business» на сайте = мгновенное доверие.</div>`,
+
+t64:`<h5>👤 Профиль AM</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Опыт: аккаунт-менеджмент в digital/рекламе</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Задачи: ведение клиентов, upsell (повторные волны, новые города), предотвращение оттока</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">KPI: retention 80%+, upsell 30% клиентов, NPS 60+</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text">ЗП: 300-400К₸ + бонус от повторных заказов</div></div>
+<div class="tip">💡 AM окупается с первого удержанного клиента. Один сохранённый годовой контракт = 12М₸.</div>`,
+
+t65:`<h5>🏷️ Как работает</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Агентство заходит в Pabliki под своим логотипом и цветами</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Клиент видит «MediaPlan by [Агентство]», а не Pabliki</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Агентство ставит свою наценку сверху → все зарабатывают</div></div>
+<div class="tip">💡 White-label = агентство не боится, что клиент уйдёт напрямую. Снимает главный барьер.</div>`,
+
+t66:`<h5>⚡ Механика</h5>
+<div class="step"><div class="step-num">1</div><div class="step-text">Клиент нажимает «Срочное размещение» → наценка +20% автоматически</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text">Оператор получает приоритетное уведомление → публикация в течение 24 часов</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text">Идеально для: запуски продуктов, мероприятия, кризисный PR, флеш-акции</div></div>
+<div class="tip">💡 Организаторы концертов / фестивалей — идеальные клиенты для этой опции. Им нужен охват за 1-2 дня.</div>`,
+
+t67:`<h5>🏆 Финальная формула</h5>
+<ul>
+<li><b>40</b> заказов — входящие (SEO + контент + калькулятор + бот)</li>
+<li><b>30</b> заказов — партнёры (50+ агентств × 0.6 заказа)</li>
+<li><b>20</b> заказов — outbound (3 SDR + 1 AE)</li>
+<li><b>10</b> заказов — повторные клиенты (retention 40%)</li>
+</ul>
+<p><b>= 100 заказов × 1 000 000₸ = 100М₸ выручки</b></p>
+<p><b>Чистая прибыль: 31-37М₸/мес</b></p>
+<div class="tip">💡 Это не мечта — это математика. Каждый канал проверяем, каждая цифра обоснована.</div>`
+};
+
 // ===================== STATE =====================
 let state = loadState();
 let currentView = 'roadmap';
 let currentFilter = 'all';
+let expandedTasks = {};
 
 function loadState(){
   try{
@@ -367,13 +698,17 @@ function renderTask(t, phaseId){
     const labels = {'priority-high':'Высокий','priority-med':'Средний','priority-low':'Низкий','type-seo':'SEO','type-sales':'Продажи','type-product':'Продукт','type-marketing':'Маркетинг','type-team':'Команда'};
     return `<span class="tag ${tag}">${labels[tag]||tag}</span>`;
   }).join('');
+  const howto = HOWTO[t.id] || t.howto || '';
+  const isExpanded = expandedTasks[t.id];
   return `
-    <div class="task ${t.done?'done':''}">
+    <div class="task ${t.done?'done':''} ${isExpanded?'expanded':''}">
       <div class="task-check" onclick="toggleTask('${phaseId}','${t.id}')"></div>
-      <div class="task-content">
+      <div class="task-content" onclick="toggleExpand('${t.id}')">
         <div class="task-title">${t.title}</div>
         ${t.desc ? `<div class="task-desc">${t.desc}</div>` : ''}
         <div class="task-tags">${tagsHtml}</div>
+        ${howto ? '<div class="task-expand-hint">▼ Нажми — как реализовать</div>' : ''}
+        ${howto ? `<div class="task-howto">${howto}</div>` : ''}
       </div>
       <div class="task-delete" onclick="deleteTask('${phaseId}','${t.id}')">✕</div>
     </div>
@@ -476,6 +811,11 @@ function togglePhase(id){
   const phase = state.phases.find(p=>p.id===id);
   if(phase) phase._open = phase._open === false ? true : false;
   saveState(); render();
+}
+
+function toggleExpand(taskId){
+  expandedTasks[taskId] = !expandedTasks[taskId];
+  render();
 }
 
 function toggleTask(phaseId, taskId){
