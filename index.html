@@ -263,6 +263,31 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .sel-count{font-size:12px;color:var(--text2);margin-bottom:8px;text-align:center}
 .sel-count strong{color:var(--primary)}
 
+/* ======================== LOGO ======================== */
+.header-logo{height:40px;width:auto}
+[data-theme="dark"] .logo-light{display:inline}
+[data-theme="dark"] .logo-dark{display:none}
+[data-theme="light"] .logo-light{display:none}
+[data-theme="light"] .logo-dark{display:inline}
+
+/* ======================== STICKY TOTALS ======================== */
+.sel-sticky{position:sticky;bottom:80px;z-index:10;background:var(--bg);padding:12px 0 4px;box-shadow:0 -4px 12px rgba(0,0,0,0.15)}
+
+/* ======================== SEARCH ======================== */
+.ig-search{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;font-family:inherit;margin-bottom:8px}
+.ig-search:focus{outline:none;border-color:var(--primary)}
+
+/* ======================== SORTABLE ======================== */
+.sel-table th.sortable{cursor:pointer;user-select:none;transition:color .15s}
+.sel-table th.sortable:hover{color:var(--accent)}
+.sort-arrow{font-size:9px;margin-left:2px;opacity:0.5}
+.sort-arrow.active{opacity:1}
+
+/* ======================== BUDGET PRESETS ======================== */
+.budget-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.budget-presets button{padding:5px 10px;border-radius:var(--radius);font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.budget-presets button:active{transform:scale(0.95);background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+
 /* Tag fallback for browsers without oklch relative */
 @supports not (background: oklch(from red l c h / 0.5)) {
   .tag.priority-high{background:rgba(210,80,80,0.15);color:#d25050}
@@ -1066,34 +1091,95 @@ function resetData(){
 }
 
 // ===================== SELECTION / ПОДБОРКА =====================
-let selCities = new Set(); // empty = all
+let selCities = new Set();
 let citySearch = '';
-let selCats = new Set(); // empty = all
-let selMode = 'client'; // client | full
+let selCats = new Set();
+let selMode = 'client';
 let selMinSubs = 0;
 let selMaxPerItem = 10000000;
 let selBudget = 10000000;
 let selSelected = new Set();
+let igSearch = '';
+let selSort = {col: 's', dir: 'desc'};
+let selShowOnly = false;
+
+// Restore from localStorage
+(function restoreSelection(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('pabliki_selection'));
+    if (!saved) return;
+    if (saved.selCities) selCities = new Set(saved.selCities);
+    if (saved.selCats) selCats = new Set(saved.selCats);
+    if (saved.selMode) selMode = saved.selMode;
+    if (saved.selMinSubs != null) selMinSubs = saved.selMinSubs;
+    if (saved.selMaxPerItem != null) selMaxPerItem = saved.selMaxPerItem;
+    if (saved.selBudget != null) selBudget = saved.selBudget;
+    if (saved.selSelected) selSelected = new Set(saved.selSelected);
+  } catch(e){}
+})();
+
+function saveSelection(){
+  localStorage.setItem('pabliki_selection', JSON.stringify({
+    selCities: [...selCities],
+    selCats: [...selCats],
+    selMode,
+    selMinSubs,
+    selMaxPerItem,
+    selBudget,
+    selSelected: [...selSelected]
+  }));
+  showToast('💾 Подборка сохранена');
+}
+
+function sortPabliki(list) {
+  const col = selSort.col;
+  const dir = selSort.dir === 'asc' ? 1 : -1;
+  return list.sort((a,b) => {
+    let va = a[col], vb = b[col];
+    if (typeof va === 'string') return va.localeCompare(vb,'ru') * dir;
+    return (va - vb) * dir;
+  });
+}
+
+function toggleSort(col) {
+  if (selSort.col === col) selSort.dir = selSort.dir === 'asc' ? 'desc' : 'asc';
+  else { selSort.col = col; selSort.dir = col === 'ig' || col === 'c' || col === 't' ? 'asc' : 'desc'; }
+  render();
+}
+
+function sortArrow(col) {
+  if (selSort.col !== col) return '';
+  return `<span class="sort-arrow active">${selSort.dir === 'asc' ? '▲' : '▼'}</span>`;
+}
 
 function getFilteredPabliki(){
-  return PABLIKI_DB.filter(p => {
+  let list = PABLIKI_DB.filter(p => {
     if(selCities.size > 0 && !selCities.has(p.c)) return false;
     if(selCats.size > 0 && !selCats.has(p.t)) return false;
     if(p.s < selMinSubs) return false;
     if(p.p > selMaxPerItem) return false;
+    if(igSearch && !p.ig.toLowerCase().includes(igSearch.toLowerCase())) return false;
+    if(selShowOnly && !selSelected.has(p.ig)) return false;
     return true;
-  }).sort((a,b) => b.s - a.s);
+  });
+  return sortPabliki(list);
 }
 
 function renderSelection(app){
+  // Save focused element info for focus restore
+  const wasFocused = document.activeElement;
+  const focusedId = wasFocused ? wasFocused.id : null;
+  const cursorPos = wasFocused && wasFocused.selectionStart != null ? wasFocused.selectionStart : null;
+
   const filtered = getFilteredPabliki();
+  const allSelected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
   const selected = filtered.filter(p => selSelected.has(p.ig));
   
-  // Totals
-  const totalSubs = selected.reduce((s,p) => s + p.s, 0);
-  const totalPrice = selected.reduce((s,p) => s + p.p, 0);
-  const totalCost = selected.reduce((s,p) => s + p.co, 0);
+  const totalSubs = allSelected.reduce((s,p) => s + p.s, 0);
+  const totalPrice = allSelected.reduce((s,p) => s + p.p, 0);
+  const totalCost = allSelected.reduce((s,p) => s + p.co, 0);
   const totalMargin = totalPrice > 0 ? Math.round((totalPrice - totalCost) / totalPrice * 100) : 0;
+  const zeroCostCount = allSelected.filter(p => p.co === 0).length;
   
   const fmt = n => n.toLocaleString('ru-RU');
   
@@ -1117,11 +1203,12 @@ function renderSelection(app){
   const shown = filtered.slice(0, showLimit);
   const hasMore = filtered.length > showLimit;
   
+  const ci = catIcons;
+  
   if(selMode === 'client'){
-    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th>Кат.</th><th class="num">Подп.</th><th class="num">Цена</th></tr>`;
+    tableHead = `<tr><th></th><th class="sortable" onclick="toggleSort('c')">Город${sortArrow('c')}</th><th class="sortable" onclick="toggleSort('ig')">Instagram${sortArrow('ig')}</th><th class="sortable" onclick="toggleSort('t')">Кат.${sortArrow('t')}</th><th class="num sortable" onclick="toggleSort('s')">Подп.${sortArrow('s')}</th><th class="num sortable" onclick="toggleSort('p')">Цена${sortArrow('p')}</th></tr>`;
     tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
-      const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
         <td style="font-size:10.5px">${p.c}</td>
@@ -1132,20 +1219,20 @@ function renderSelection(app){
       </tr>`;
     }).join('');
   } else {
-    tableHead = `<tr><th></th><th>Город</th><th>Instagram</th><th>Кат.</th><th class="num">Подп.</th><th class="num">Себест.</th><th class="num">Цена</th><th class="num">Маржа</th><th class="num">%</th></tr>`;
+    tableHead = `<tr><th></th><th class="sortable" onclick="toggleSort('c')">Город${sortArrow('c')}</th><th class="sortable" onclick="toggleSort('ig')">Instagram${sortArrow('ig')}</th><th class="sortable" onclick="toggleSort('t')">Кат.${sortArrow('t')}</th><th class="num sortable" onclick="toggleSort('s')">Подп.${sortArrow('s')}</th><th class="num sortable" onclick="toggleSort('co')">Себест.${sortArrow('co')}</th><th class="num sortable" onclick="toggleSort('p')">Цена${sortArrow('p')}</th><th class="num">Маржа</th><th class="num">%</th></tr>`;
     tableRows = shown.map(p => {
       const checked = selSelected.has(p.ig);
       const marginPct = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
       const marginT = p.p - p.co;
       const mColor = marginPct >= 50 ? 'var(--green)' : marginPct >= 30 ? 'var(--yellow)' : 'var(--red)';
-      const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
+      const zeroCostIcon = p.co === 0 ? ' ⚠️' : '';
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
         <td style="font-size:10.5px">${p.c}</td>
         <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
         <td style="font-size:10px">${ci[p.t]||''}</td>
         <td class="num">${fmt(p.s)}</td>
-        <td class="num">${fmt(p.co)}₸</td>
+        <td class="num">${fmt(p.co)}₸${zeroCostIcon}</td>
         <td class="num">${fmt(p.p)}₸</td>
         <td class="num" style="color:${mColor};font-weight:600">${fmt(marginT)}₸</td>
         <td class="num" style="color:${mColor};font-weight:700">${marginPct}%</td>
@@ -1153,9 +1240,12 @@ function renderSelection(app){
     }).join('');
   }
 
+  const zeroCostNote = zeroCostCount > 0 && selMode === 'full' ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">* ${zeroCostCount} пабликов без себестоимости</div>` : '';
+
   app.innerHTML = `
     <div class="header">
-      <h1>ПОДБОРКА</h1>
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki">
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki">
       <p>Создай медиаплан из ${PABLIKI_DB.length} пабликов</p>
     </div>
     
@@ -1166,7 +1256,7 @@ function renderSelection(app){
     
     <div class="filter-section">
       <h4>🏙️ Город ${selCities.size>0?'<span style="color:var(--primary);font-weight:400;font-size:11px">('+selCities.size+' выбрано)</span>':''}</h4>
-      <input type="text" placeholder="🔍 Поиск города..." value="${citySearch}" oninput="citySearch=this.value;renderCityChips()" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;font-family:inherit;margin-bottom:8px">
+      <input type="text" id="citySearchInput" placeholder="🔍 Поиск города..." value="${citySearch}" oninput="citySearch=this.value;renderCityChips()" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;font-family:inherit;margin-bottom:8px">
       <div class="city-chips" id="cityChips">${cityOptions}</div>
     </div>
     
@@ -1186,30 +1276,44 @@ function renderSelection(app){
       </div>
       <div class="filter-row">
         <div class="filter-label">💰 Общий бюджет <span id="lblBudget" style="font-size:13px">${selBudget>=10000000?'∞':fmt(selBudget)+'₸'}</span></div>
+        <div class="budget-presets">
+          <button onclick="selBudget=300000;autoSelectByBudget();render()">300К</button>
+          <button onclick="selBudget=500000;autoSelectByBudget();render()">500К</button>
+          <button onclick="selBudget=1000000;autoSelectByBudget();render()">1М</button>
+          <button onclick="selBudget=2000000;autoSelectByBudget();render()">2М</button>
+          <button onclick="selBudget=5000000;autoSelectByBudget();render()">5М</button>
+        </div>
         <input type="range" min="100000" max="10000000" step="50000" value="${selBudget}" oninput="document.getElementById('lblBudget').textContent=this.value>=10000000?'∞':Number(this.value).toLocaleString('ru-RU')+'₸'" onchange="selBudget=+this.value;autoSelectByBudget();render()">
       </div>
     </div>
     
-    <div class="sel-count" style="display:flex;align-items:center;justify-content:center;gap:12px">
-      <span>Найдено: <strong>${filtered.length}</strong> · Выбрано: <strong>${selected.length}</strong></span>
-      <button class="city-chip ${filtered.every(p=>selSelected.has(p.ig))?'active':''}" onclick="if(getFilteredPabliki().every(p=>selSelected.has(p.ig))){getFilteredPabliki().forEach(p=>selSelected.delete(p.ig))}else{getFilteredPabliki().forEach(p=>selSelected.add(p.ig))};render()" style="font-size:11px;padding:5px 10px">${filtered.every(p=>selSelected.has(p.ig))&&filtered.length?'✕ Снять все':'☑ Выбрать все'}</button>
+    <input type="text" id="igSearchInput" class="ig-search" placeholder="🔍 Поиск по @instagram..." value="${igSearch}" oninput="igSearch=this.value;render()">
+    
+    <div class="sel-count" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+      <span>Найдено: <strong>${filtered.length}</strong> · Выбрано: <strong>${allSelected.length}</strong></span>
+      <button class="city-chip ${filtered.every(p=>selSelected.has(p.ig))&&filtered.length?'active':''}" onclick="if(getFilteredPabliki().every(p=>selSelected.has(p.ig))){getFilteredPabliki().forEach(p=>selSelected.delete(p.ig))}else{getFilteredPabliki().forEach(p=>selSelected.add(p.ig))};render()" style="font-size:11px;padding:5px 10px">${filtered.every(p=>selSelected.has(p.ig))&&filtered.length?'✕ Снять все':'☑ Выбрать все'}</button>
+      <button class="city-chip ${selShowOnly?'active':''}" onclick="selShowOnly=!selShowOnly;render()" style="font-size:11px;padding:5px 10px">${selShowOnly?'👁 Все':'👁 Выбранные'}</button>
     </div>
     
-    ${selected.length > 0 ? `
-    <div class="sel-total">
-      <div class="sel-total-row"><span class="label">Выбрано пабликов</span><span class="val">${selected.length}</span></div>
-      <div class="sel-total-row"><span class="label">Суммарная аудитория</span><span class="val">${fmt(totalSubs)}</span></div>
-      <div class="sel-total-row"><span class="label">Итого стоимость</span><span class="val">${fmt(totalPrice)}₸</span></div>
-      ${selMode==='full'?`
-      <div class="sel-total-row"><span class="label">Себестоимость</span><span class="val">${fmt(totalCost)}₸</span></div>
-      <div class="sel-total-row"><span class="label">Маржа (₸)</span><span class="val green">${fmt(totalPrice - totalCost)}₸</span></div>
-      <div class="sel-total-row"><span class="label">Маржинальность</span><span class="val green">${totalMargin}%</span></div>
-      `:''}
-    </div>
-    <div class="sel-actions">
-      <button class="btn btn-primary" onclick="exportSelPDF()">📄 PDF</button>
-      <button class="btn btn-ghost" onclick="shareSel()">📤 Отправить</button>
-      <button class="btn btn-ghost" onclick="selSelected.clear();render()">✕ Сбросить</button>
+    ${allSelected.length > 0 ? `
+    <div class="sel-sticky">
+      <div class="sel-total">
+        <div class="sel-total-row"><span class="label">Выбрано пабликов</span><span class="val">${allSelected.length}</span></div>
+        <div class="sel-total-row"><span class="label">Суммарная аудитория</span><span class="val">${fmt(totalSubs)}</span></div>
+        <div class="sel-total-row"><span class="label">Итого стоимость</span><span class="val">${fmt(totalPrice)}₸</span></div>
+        ${selMode==='full'?`
+        <div class="sel-total-row"><span class="label">Себестоимость</span><span class="val">${fmt(totalCost)}₸</span></div>
+        <div class="sel-total-row"><span class="label">Маржа (₸)</span><span class="val green">${fmt(totalPrice - totalCost)}₸</span></div>
+        <div class="sel-total-row"><span class="label">Маржинальность</span><span class="val green">${totalMargin}%</span></div>
+        `:''}
+        ${zeroCostNote}
+      </div>
+      <div class="sel-actions">
+        <button class="btn btn-primary" onclick="exportSelPDF()">📄 PDF</button>
+        <button class="btn btn-ghost" onclick="shareSel()">📤 Отправить</button>
+        <button class="btn btn-ghost" onclick="saveSelection()">💾 Сохранить</button>
+        <button class="btn btn-ghost" onclick="selSelected.clear();render()">✕ Сбросить</button>
+      </div>
     </div>
     ` : ''}
     
@@ -1221,6 +1325,12 @@ function renderSelection(app){
     </div>
     ${hasMore ? `<div style="text-align:center;padding:12px;color:var(--text2);font-size:12px">Показано ${showLimit} из ${filtered.length} · Используйте фильтры для уточнения</div>` : ''}
   `;
+
+  // Restore focus
+  if (focusedId) {
+    const el = document.getElementById(focusedId);
+    if (el) { el.focus(); if (cursorPos != null) try { el.setSelectionRange(cursorPos, cursorPos); } catch(e){} }
+  }
 }
 
 function renderCityChips(){
@@ -1311,7 +1421,7 @@ function exportSelPDF(){
   </style></head><body>
   <div class="page">
     <div class="header">
-      <div class="logo">PABLIKI.KZ</div>
+      <img src="data:image/png;base64,${window._logoDarkB64||''}" style="height:40px" onerror="this.outerHTML='<div style=\\'font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px\\'>PABLIKI.KZ</div>'">
       <div class="subtitle">${isClient?'Городская реклама нового поколения — медиаплан':'Внутренний медиаплан (полная аналитика)'} от ${date}</div>
     </div>
     <div class="stats">
@@ -1332,7 +1442,7 @@ function exportSelPDF(){
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="${isClient?4:4}" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
+        <td colspan="4" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
         <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
         ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalCost)}₸</td>`:''}
         <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
@@ -1384,6 +1494,9 @@ function shareSel(){
 }
 
 // ===================== INIT =====================
+// Preload logo base64 for PDF export
+fetch('logo-dark.png').then(r=>r.blob()).then(b=>{const rd=new FileReader();rd.onload=()=>{window._logoDarkB64=rd.result.split(',')[1]};rd.readAsDataURL(b)}).catch(()=>{});
+
 window.addEventListener('load', () => {
   setTimeout(() => {
     const s = document.getElementById('splash');
