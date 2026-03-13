@@ -347,7 +347,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 </head>
 <body>
 
-<!-- splash убран для скорости -->
+<div id="splash" style="position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s">
+  <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+  <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+  <p style="margin-top:8px;color:var(--text2);font-size:12px">Загрузка...</p>
+</div>
 
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
@@ -1792,7 +1796,7 @@ function openLeadCRM(idx){
       ${PARS_WA_TEMPLATES.map((t,i)=>{
         const msg = t.text.replace(/{name}/g, lead.n).replace(/{city}/g, lead.c).replace(/{niche}/g, lead.ni);
         const waNum = (lead.w||lead.p||'').replace(/[^0-9]/g,'');
-        return waNum ? \`<a href="https://wa.me/\${waNum}?text=\${encodeURIComponent(msg)}" target="_blank" onclick="event.stopPropagation();addTouch('\${key}','\${t.name}')" class="btn btn-ghost" style="text-align:left;font-size:12px;padding:8px 12px;text-decoration:none;display:block">\${t.name}</a>\` : '';
+        return waNum ? '<a href="https://wa.me/' + waNum + '?text=' + encodeURIComponent(msg) + '" target="_blank" onclick="event.stopPropagation();addTouch(\'' + key + '\',\'' + t.name + '\')" class="btn btn-ghost" style="text-align:left;font-size:12px;padding:8px 12px;text-decoration:none;display:block">' + t.name + '</a>' : '';
       }).filter(Boolean).join('')}
     </div>
     <button onclick="document.getElementById('modalOverlay').style.display='none'" style="width:100%;padding:10px;border-radius:var(--radius);background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer">Закрыть</button>
@@ -2469,18 +2473,14 @@ function shareSel(){
 // Preload logo base64 for PDF export
 fetch('logo-dark.png').then(r=>r.blob()).then(b=>{const rd=new FileReader();rd.onload=()=>{window._logoDarkB64=rd.result.split(',')[1]};rd.readAsDataURL(b)}).catch(()=>{});
 
-try {
-  // Проверяем что state валиден
-  if(!state || !state.phases || !state.phases.length) {
-    state = {phases: JSON.parse(JSON.stringify(DEFAULT_PHASES)), customTasks:[], version:2};
-    localStorage.removeItem('pabliki_roadmap_v2');
-  }
-  render();
-  // Если app пустой после render — показываем дебаг
-  if(!document.getElementById('app').innerHTML.trim()) {
-    document.getElementById('app').innerHTML = '<p style="color:orange;padding:20px">App пустой после render. currentView=' + currentView + ', phases=' + (state?.phases?.length||0) + ', DEFAULT_PHASES=' + (typeof DEFAULT_PHASES !== 'undefined' ? DEFAULT_PHASES.length : 'undef') + '</p>';
-  }
-} catch(e) { console.error('render error:', e); document.getElementById('app').innerHTML='<p style="color:red;padding:20px">Ошибка: '+e.message+'</p>'; }
+// Init
+setTimeout(function(){
+  var s = document.getElementById('splash');
+  if(s){s.style.opacity='0'; setTimeout(function(){s.remove()}, 600);}
+}, 2000);
+try { render(); } catch(e) { console.error(e); }
+var sp = document.getElementById('splash');
+if(sp){sp.style.opacity='0'; setTimeout(function(){sp.remove()}, 600);}
 </script>
 </body>
 </html>
