@@ -1153,6 +1153,7 @@ function renderSettings(app){
         📤 Импорт
         <input type="file" accept=".json" style="display:none" onchange="importData(event)">
       </label>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:8px" onclick="reloadLeadsOnly()">🔄 Обновить базу лидов</button>
       <button class="btn btn-ghost" style="width:100%;color:var(--red);border-color:var(--red)" onclick="resetData()">🗑 Сбросить всё</button>
     </div>
     <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">
@@ -1262,6 +1263,29 @@ function importData(e){
     }
   };
   reader.readAsText(file);
+}
+
+function reloadLeadsOnly(){
+  if(!confirm('Перезагрузить базу лидов? Ваши добавленные вручную лиды будут потеряны, но roadmap и подборки сохранятся.')) return;
+  localStorage.removeItem('pabliki_leads');
+  localStorage.removeItem('pabliki_leads_loaded');
+  // Reload default leads
+  if(typeof DEFAULT_LEADS !== 'undefined' && DEFAULT_LEADS.length){
+    const leads = DEFAULT_LEADS.map((l,i) => ({
+      id: 'dl_' + i + '_' + Date.now(),
+      name: l.name || '', city: l.city || '', niche: l.niche || 'Другое',
+      phone: l.phone || '', whatsapp: l.whatsapp || l.phone || '',
+      instagram: l.instagram || '', igFollowers: l.igFollowers || 0,
+      website: l.website || '', rating: l.rating || 0,
+      notes: l.contact ? (l.role ? l.role + ': ' : '') + l.contact : '',
+      status: 'new', score: 0,
+      created: new Date().toISOString(), lastContact: null
+    }));
+    saveLeads(leads);
+    localStorage.setItem('pabliki_leads_loaded', '1');
+  }
+  render();
+  showToast('✅ База лидов обновлена: ' + getLeads().length + ' лидов');
 }
 
 function resetData(){
