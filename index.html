@@ -2062,12 +2062,16 @@ function renderSelection(app){
   
   const fmt = n => n.toLocaleString('ru-RU');
   
+  const MAIN_CITIES = ['Алматы','Астана','Шымкент','Караганда','Уральск','Павлодар','Петропавловск','Семей','Актобе','Атырау','Усть-Каменоргорск','Кокшетау','Актау','Костанай','Тараз','Жезказган','Кызылорда','Талдыкорган','Крупные (РК)','Регионы'];
   const allCitiesSet = [...new Set(PABLIKI_DB.map(p=>p.c))].sort((a,b)=>a.localeCompare(b,'ru'));
-  const filteredCities = citySearch ? allCitiesSet.filter(c=>c.toLowerCase().includes(citySearch.toLowerCase())) : PABLIKI_CITIES;
+  const otherCities = allCitiesSet.filter(c => !MAIN_CITIES.includes(c));
+  const mkChip = c => `<button class="city-chip ${selCities.has(c)?'active':''}" onclick="if(selCities.has('${c.replace(/'/g,"\\'")}'))selCities.delete('${c.replace(/'/g,"\\'")}');else selCities.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`;
+  const filteredMain = citySearch ? allCitiesSet.filter(c=>c.toLowerCase().includes(citySearch.toLowerCase())) : MAIN_CITIES;
+  const filteredOther = citySearch ? [] : otherCities;
   const cityOptions = [
     `<button class="city-chip ${selCities.size===0?'active':''}" onclick="selCities.clear();render()">Все города</button>`,
-    ...filteredCities.map(c =>
-      `<button class="city-chip ${selCities.has(c)?'active':''}" onclick="if(selCities.has('${c.replace(/'/g,"\\'")}'))selCities.delete('${c.replace(/'/g,"\\'")}');else selCities.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`)
+    ...filteredMain.map(mkChip),
+    ...(filteredOther.length ? [`<div id="otherCitiesWrap" style="width:100%"><button class="city-chip" onclick="var el=document.getElementById('otherCitiesList');var b=this;if(el.style.display==='none'){el.style.display='flex';b.textContent='Ещё регионы ▲'}else{el.style.display='none';b.textContent='Ещё регионы (${filteredOther.length}) ▼'}" style="background:var(--primary);color:#fff;font-weight:600">Ещё регионы (${filteredOther.length}) ▼</button><div id="otherCitiesList" style="display:none;flex-wrap:wrap;gap:6px;margin-top:6px">${filteredOther.map(mkChip).join('')}</div></div>`] : [])
   ].join('');
   
   const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
@@ -2214,14 +2218,18 @@ function renderSelection(app){
 }
 
 function renderCityChips(){
+  const MAIN_CITIES2 = ['Алматы','Астана','Шымкент','Караганда','Уральск','Павлодар','Петропавловск','Семей','Актобе','Атырау','Усть-Каменоргорск','Кокшетау','Актау','Костанай','Тараз','Жезказган','Кызылорда','Талдыкорган','Крупные (РК)','Регионы'];
   const allCitiesSet = [...new Set(PABLIKI_DB.map(p=>p.c))].sort((a,b)=>a.localeCompare(b,'ru'));
-  const filteredCities = citySearch ? allCitiesSet.filter(c=>c.toLowerCase().includes(citySearch.toLowerCase())) : PABLIKI_CITIES;
+  const otherCities = allCitiesSet.filter(c => !MAIN_CITIES2.includes(c));
+  const mkC = c => `<button class="city-chip ${selCities.has(c)?'active':''}" onclick="if(selCities.has('${c.replace(/'/g,"\\'")}'))selCities.delete('${c.replace(/'/g,"\\'")}');else selCities.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`;
+  const filteredMain = citySearch ? allCitiesSet.filter(c=>c.toLowerCase().includes(citySearch.toLowerCase())) : MAIN_CITIES2;
+  const filteredOther = citySearch ? [] : otherCities;
   const el = document.getElementById('cityChips');
   if(!el) return;
   el.innerHTML = [
     `<button class="city-chip ${selCities.size===0?'active':''}" onclick="selCities.clear();citySearch='';render()">Все города</button>`,
-    ...filteredCities.map(c =>
-      `<button class="city-chip ${selCities.has(c)?'active':''}" onclick="if(selCities.has('${c.replace(/'/g,"\\'")}'))selCities.delete('${c.replace(/'/g,"\\'")}');else selCities.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`)
+    ...filteredMain.map(mkC),
+    ...(filteredOther.length ? [`<div id="otherCitiesWrap2" style="width:100%"><button class="city-chip" onclick="var el=document.getElementById('otherCitiesList2');var b=this;if(el.style.display==='none'){el.style.display='flex';b.textContent='Ещё регионы ▲'}else{el.style.display='none';b.textContent='Ещё регионы (${filteredOther.length}) ▼'}" style="background:var(--primary);color:#fff;font-weight:600">Ещё регионы (${filteredOther.length}) ▼</button><div id="otherCitiesList2" style="display:none;flex-wrap:wrap;gap:6px;margin-top:6px">${filteredOther.map(mkC).join('')}</div></div>`] : [])
   ].join('');
 }
 
