@@ -9,6 +9,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Pabliki Growth — Roadmap</title>
 <script src="pabliki-data.js"></script>
+<script src="leads-data.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1274,6 +1276,33 @@ function resetData(){
 function getLeads(){ try{return JSON.parse(localStorage.getItem('pabliki_leads'))||[];}catch(e){return [];} }
 function saveLeads(leads){ localStorage.setItem('pabliki_leads', JSON.stringify(leads)); }
 
+// Load default leads on first run
+(function loadDefaultLeads(){
+  if(localStorage.getItem('pabliki_leads_loaded')) return;
+  if(typeof DEFAULT_LEADS === 'undefined' || !DEFAULT_LEADS.length) return;
+  const existing = getLeads();
+  if(existing.length > 0) return;
+  const leads = DEFAULT_LEADS.map((l,i) => ({
+    id: 'dl_' + i + '_' + Date.now(),
+    name: l.name || '',
+    city: l.city || '',
+    niche: l.niche || 'Другое',
+    phone: l.phone || '',
+    whatsapp: l.whatsapp || l.phone || '',
+    instagram: l.instagram || '',
+    igFollowers: l.igFollowers || 0,
+    website: l.website || '',
+    rating: l.rating || 0,
+    notes: l.contact ? (l.role ? l.role + ': ' : '') + l.contact : '',
+    status: l.status || 'new',
+    score: 0,
+    created: new Date().toISOString(),
+    lastContact: null
+  }));
+  saveLeads(leads);
+  localStorage.setItem('pabliki_leads_loaded', '1');
+})();
+
 function scoreLead(lead){
   let score=0;
   if(lead.instagram) score+=20;
@@ -1395,9 +1424,10 @@ function saveLead(editId){
 
 function showImportCSV(){
   document.getElementById('modalContent').innerHTML = `
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">📥 Импорт CSV</h3>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">📥 Импорт базы</h3>
     <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Формат: name,city,niche,phone,instagram (гибкий порядок)</p>
-    <input type="file" accept=".csv,.txt" id="csvFileInput" style="margin-bottom:12px;font-size:13px;color:var(--text)">
+    <input type="file" accept=".csv,.txt,.xlsx,.xls" id="csvFileInput" style="margin-bottom:12px;font-size:13px;color:var(--text)">
+    <p style="font-size:10px;color:var(--text3);margin-bottom:8px">Поддерживает: Excel (.xlsx), CSV, TXT. Колонки: Компания, Город, Ниша, Телефон, Имя</p>
     <button class="btn btn-primary" style="width:100%" onclick="parseCSV()">📥 Загрузить</button>`;
   document.getElementById('modalOverlay').classList.add('show');
 }
@@ -1405,44 +1435,136 @@ function showImportCSV(){
 function parseCSV(){
   const fileInput=document.getElementById('csvFileInput');
   if(!fileInput.files.length){showToast('Выберите файл');return;}
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    const lines=ev.target.result.split(/\r?\n/).filter(l=>l.trim());
-    if(lines.length<2){showToast('Файл пуст');return;}
-    const headerLine=lines[0].toLowerCase();
-    const sep=headerLine.includes('\t')?'\t':headerLine.includes(';')?';':',';
-    const headers=headerLine.split(sep).map(h=>h.trim());
-    const colMap={};
-    ['name','city','niche','phone','instagram'].forEach(f=>{
-      const idx=headers.findIndex(h=>h.includes(f)||h.includes({name:'название',city:'город',niche:'ниша',phone:'телефон',instagram:'instagram'}[f]||f));
-      if(idx>=0) colMap[f]=idx;
-    });
-    const newLeads=[];
-    for(let i=1;i<lines.length;i++){
-      const cols=lines[i].split(sep).map(c=>c.trim().replace(/^["']|["']$/g,''));
-      if(!cols.length) continue;
-      const lead={
-        id:'lead_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+i,
-        name:cols[colMap.name!==undefined?colMap.name:0]||'',
-        city:cols[colMap.city!==undefined?colMap.city:1]||'',
-        niche:cols[colMap.niche!==undefined?colMap.niche:2]||'Другое',
-        phone:cols[colMap.phone!==undefined?colMap.phone:3]||'',
-        whatsapp:cols[colMap.phone!==undefined?colMap.phone:3]||'',
-        instagram:cols[colMap.instagram!==undefined?colMap.instagram:4]||'',
-        igFollowers:0,website:'',rating:3,notes:'',status:'new',
-        created:new Date().toISOString(),lastContact:new Date().toISOString(),podborka:false
-      };
-      lead.score=scoreLead(lead);
-      if(lead.name) newLeads.push(lead);
-    }
-    if(!newLeads.length){showToast('Лидов не найдено');return;}
-    if(!confirm('Найдено '+newLeads.length+' лидов. Импортировать?')) return;
-    const leads=getLeads().concat(newLeads);
-    saveLeads(leads);
-    document.getElementById('modalOverlay').classList.remove('show');
-    render(); showToast('✅ Импортировано: '+newLeads.length);
+  const file = fileInput.files[0];
+  const isExcel = file.name.match(/\.xlsx?$/i);
+  
+  if(isExcel && typeof XLSX !== 'undefined'){
+    // Excel import via SheetJS
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        const wb = XLSX.read(ev.target.result, {type:'array'});
+        let allRows = [];
+        // Process all sheets
+        wb.SheetNames.forEach(sn => {
+          const ws = wb.Sheets[sn];
+          const data = XLSX.utils.sheet_to_json(ws, {defval:''});
+          // Add sheet name as potential niche
+          data.forEach(r => { r._sheet = sn; });
+          allRows = allRows.concat(data);
+        });
+        if(!allRows.length){showToast('Файл пуст');return;}
+        processImportRows(allRows);
+      } catch(e){
+        showToast('❌ Ошибка чтения Excel: '+e.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // CSV/TXT import
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const lines=ev.target.result.split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length<2){showToast('Файл пуст');return;}
+      const headerLine=lines[0].toLowerCase();
+      const sep=headerLine.includes('\t')?'\t':headerLine.includes(';')?';':',';
+      const headers=headerLine.split(sep).map(h=>h.trim());
+      const rows = [];
+      for(let i=1;i<lines.length;i++){
+        const cols=lines[i].split(sep).map(c=>c.trim().replace(/^["']|["']$/g,''));
+        const obj = {};
+        headers.forEach((h,j) => obj[h] = cols[j] || '');
+        rows.push(obj);
+      }
+      processImportRows(rows);
+    };
+    reader.readAsText(file);
+  }
+}
+
+function processImportRows(rows){
+  // Smart column detection
+  const colAliases = {
+    name: ['компания','название','name','company','наименование','организация'],
+    city: ['город','city','регион'],
+    niche: ['ниша','niche','категория','тип','сфера','_sheet'],
+    phone: ['телефон','phone','тел','телефоны','моб'],
+    contact: ['имя','контакт','contact','лпр','name','фио'],
+    role: ['роль','role','должность'],
+    instagram: ['instagram','инстаграм','ig','insta'],
+    whatsapp: ['whatsapp','ватсап','wa']
   };
-  reader.readAsText(fileInput.files[0]);
+  
+  function findCol(row, aliases){
+    const keys = Object.keys(row);
+    for(const alias of aliases){
+      const found = keys.find(k => k.toLowerCase().includes(alias));
+      if(found && row[found]) return String(row[found]).trim();
+    }
+    return '';
+  }
+  
+  // Niche mapping
+  const nicheMap = {
+    'рестораны':'HoReCa','кафе':'HoReCa','банкет':'HoReCa','horeca':'HoReCa',
+    'салон':'Бьюти','красот':'Бьюти','барбер':'Бьюти','beauty':'Бьюти',
+    'медицин':'Клиники','стомат':'Клиники','клиник':'Клиники','аптек':'Клиники',
+    'авто':'Автобизнес','мойк':'Автобизнес','сервис':'Автобизнес',
+    'фитнес':'Фитнес','спорт':'Фитнес','gym':'Фитнес',
+    'образ':'Образование','школ':'Образование','курс':'Образование',
+    'строит':'Застройщики','недвижим':'Застройщики',
+    'детск':'Детские центры','турист':'Туризм','туризм':'Туризм',
+    'e-com':'E-commerce','магазин':'E-commerce'
+  };
+  
+  function mapNiche(raw){
+    if(!raw) return 'Другое';
+    const lower = raw.toLowerCase();
+    for(const [key,val] of Object.entries(nicheMap)){
+      if(lower.includes(key)) return val;
+    }
+    return raw.length > 20 ? 'Другое' : raw;
+  }
+  
+  const newLeads = [];
+  const existing = new Set(getLeads().map(l => (l.name+'|'+l.city).toLowerCase()));
+  
+  rows.forEach((row, i) => {
+    const name = findCol(row, colAliases.name);
+    const city = findCol(row, colAliases.city) || 'Алматы';
+    if(!name) return;
+    
+    const key = (name+'|'+city).toLowerCase();
+    if(existing.has(key)) return; // skip dupes
+    existing.add(key);
+    
+    let phone = findCol(row, colAliases.phone).replace(/[^\d+]/g,'');
+    if(phone.startsWith('+')) phone = phone.slice(1);
+    if(phone.startsWith('8') && phone.length===11) phone = '7' + phone.slice(1);
+    
+    const nicheRaw = findCol(row, colAliases.niche);
+    const contact = findCol(row, colAliases.contact);
+    const role = findCol(row, colAliases.role);
+    
+    newLeads.push({
+      id: 'imp_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+i,
+      name, city,
+      niche: mapNiche(nicheRaw),
+      phone, whatsapp: phone,
+      instagram: findCol(row, colAliases.instagram).replace('@',''),
+      igFollowers: 0, website: '', rating: 0,
+      notes: (role && contact) ? role+': '+contact : contact || '',
+      status: 'new', score: 0,
+      created: new Date().toISOString(), lastContact: null
+    });
+  });
+  
+  if(!newLeads.length){showToast('Новых лидов не найдено (возможно дубли)');return;}
+  if(!confirm('Найдено '+newLeads.length+' новых лидов. Импортировать?')) return;
+  const leads = getLeads().concat(newLeads);
+  saveLeads(leads);
+  document.getElementById('modalOverlay').classList.remove('show');
+  render(); showToast('✅ Импортировано: '+newLeads.length);
 }
 
 function showWATemplates(id){
@@ -1541,7 +1663,7 @@ function renderLeads(app){
     </div>
     <div class="lead-header-actions">
       <button class="btn btn-primary" onclick="showLeadForm()">➕ Добавить</button>
-      <button class="btn btn-ghost" onclick="showImportCSV()">📥 Импорт CSV</button>
+      <button class="btn btn-ghost" onclick="showImportCSV()">📥 Импорт</button>
     </div>
     <div class="stats-bar">
       <div class="stat-card"><div class="num" style="color:var(--primary)">${counts.all}</div><div class="label">Всего</div></div>
