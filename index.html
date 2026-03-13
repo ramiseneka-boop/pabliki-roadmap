@@ -211,10 +211,10 @@ body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-t
 
 /* ======================== NAV ======================== */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card-bg);border-top:1px solid var(--border);display:flex;justify-content:center;gap:0;padding:8px 0 calc(8px + var(--safe-bottom));z-index:50;transition:background .3s}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 24px;cursor:pointer;transition:color .2s;color:var(--text3)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;cursor:pointer;transition:color .2s;color:var(--text3)}
 .nav-item.active{color:var(--primary)}
-.nav-item .icon{font-size:20px}
-.nav-item .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.nav-item .icon{font-size:16px}
+.nav-item .label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
 
 /* ======================== TOAST / MODAL ======================== */
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:var(--radius);font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;box-shadow:var(--shadow)}
@@ -303,6 +303,42 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   .task-howto .step-num{background:rgba(160,100,220,0.15);color:#a064dc}
   .task-howto .tip{background:rgba(80,200,140,0.1)}
 }
+
+/* ======================== LEADS ======================== */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.stats-bar .stat-card{text-align:center;padding:12px 6px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stats-bar .stat-card .num{font-size:22px;font-weight:800;line-height:1}
+.stats-bar .stat-card .label{font-size:9px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}
+.lead-filters{margin-bottom:16px}
+.lead-filters .search-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;font-family:inherit;margin-bottom:10px}
+.lead-filters .search-input:focus{outline:none;border-color:var(--primary)}
+.lead-filters .filter-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.lead-filters .filter-chip{padding:6px 10px;border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.lead-filters .filter-chip.active{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.lead-filters .filter-chip:active{transform:scale(0.95)}
+.lead-filters .sort-row{display:flex;gap:6px;flex-wrap:wrap}
+.lead-filters .sort-btn{padding:5px 10px;border-radius:var(--radius);font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.lead-filters .sort-btn.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.lead-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);animation:fadeIn .3s ease}
+.lead-card .lead-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.lead-score{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap}
+.lead-score.hot{background:rgba(16,185,129,0.15);color:#10b981}
+.lead-score.warm{background:rgba(245,158,11,0.15);color:#f59e0b}
+.lead-score.cold{background:rgba(37,99,235,0.15);color:#2563eb}
+.lead-card .lead-name{flex:1;font-size:14px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lead-status{display:inline-flex;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+.lead-status:active{transform:scale(0.95)}
+.lead-status[data-s="new"]{background:rgba(37,99,235,0.15);color:#2563eb}
+.lead-status[data-s="sent"]{background:rgba(245,158,11,0.15);color:#f59e0b}
+.lead-status[data-s="dialog"]{background:rgba(139,92,246,0.15);color:#8b5cf6}
+.lead-status[data-s="client"]{background:rgba(16,185,129,0.15);color:#10b981}
+.lead-status[data-s="rejected"]{background:rgba(239,68,68,0.15);color:#ef4444}
+.lead-card .lead-info{font-size:12px;color:var(--text2);line-height:1.6}
+.lead-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.lead-actions button{padding:7px 12px;border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.lead-actions button:active{transform:scale(0.95);background:var(--surface)}
+.lead-header-actions{display:flex;gap:8px;margin-bottom:16px}
+.lead-header-actions .btn{font-size:12px;padding:10px 16px}
 </style>
 </head>
 <body>
@@ -320,6 +356,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchView('roadmap')"><span class="icon">🗺️</span><span class="label">Roadmap</span></div>
   <div class="nav-item" onclick="switchView('selection')"><span class="icon">📋</span><span class="label">Подборка</span></div>
+  <div class="nav-item" onclick="switchView('leads')"><span class="icon">🎯</span><span class="label">Лиды</span></div>
   <div class="nav-item" onclick="switchView('finance')"><span class="icon">💰</span><span class="label">Экономика</span></div>
   <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
 </div>
@@ -771,6 +808,7 @@ function render(){
   const app = document.getElementById('app');
   if(currentView === 'roadmap') renderRoadmap(app);
   else if(currentView === 'selection') renderSelection(app);
+  else if(currentView === 'leads') renderLeads(app);
   else if(currentView === 'finance') renderFinance(app);
   else renderSettings(app);
   updateNav();
@@ -1183,7 +1221,7 @@ function setFilter(f){ currentFilter = f; render(); }
 function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
-    const views = ['roadmap','selection','finance','settings'];
+    const views = ['roadmap','selection','leads','finance','settings'];
     el.classList.toggle('active', views[i]===currentView);
   });
 }
@@ -1230,6 +1268,298 @@ function resetData(){
   state = {phases: JSON.parse(JSON.stringify(DEFAULT_PHASES)), customTasks:[], version:2};
   saveState(); render();
   showToast('🗑 Данные сброшены');
+}
+
+// ===================== LEADS / ЛИДЫ =====================
+function getLeads(){ try{return JSON.parse(localStorage.getItem('pabliki_leads'))||[];}catch(e){return [];} }
+function saveLeads(leads){ localStorage.setItem('pabliki_leads', JSON.stringify(leads)); }
+
+function scoreLead(lead){
+  let score=0;
+  if(lead.instagram) score+=20;
+  if(lead.igFollowers && lead.igFollowers<10000) score+=15;
+  if(lead.rating && lead.rating>=4.0) score+=10;
+  if(['HoReCa','Бьюти','Клиники','Застройщики'].includes(lead.niche)) score+=15;
+  if(['Алматы','Астана'].includes(lead.city)) score+=10;
+  if(lead.whatsapp) score+=15;
+  if(lead.phone) score+=10;
+  return Math.min(score,100);
+}
+
+function scoreLabel(s){
+  if(s>=70) return {text:'🔥 Горячий',cls:'hot'};
+  if(s>=40) return {text:'🟡 Тёплый',cls:'warm'};
+  return {text:'🔵 Холодный',cls:'cold'};
+}
+
+const LEAD_STATUSES = {new:'🆕 Новый',sent:'📤 Отправлено',dialog:'💬 В диалоге',client:'✅ Клиент',rejected:'❌ Отказ'};
+const LEAD_NICHES = ['HoReCa','Бьюти','Клиники','Застройщики','Образование','E-commerce','Автобизнес','Рекламное агентство','Другое'];
+const LEAD_STATUS_CYCLE = ['new','sent','dialog','client'];
+
+let leadSearch = '';
+let leadStatusFilter = 'all';
+let leadSort = 'score';
+let pendingLeadRef = null;
+
+const WA_TEMPLATES = [
+  {name:'Первое касание', text:'Здравствуйте! Мы — Pabliki.kz, городская медиасеть Казахстана. Подготовили для {name} подборку пабликов в {city} — {count} пабликов, {subs}+ аудитория. Отправить?'},
+  {name:'С подборкой', text:'Здравствуйте! Для {name} в {city} подобрали {count} пабликов ({niche}). Охват {subs}+ подписчиков, стоимость от {price}₸. Подробнее: {link}'},
+  {name:'Follow-up', text:'Добрый день! Напоминаю о подборке пабликов для {name}. Если интересно — можем обсудить детали и подобрать оптимальный пакет.'}
+];
+
+function nicheToCategory(niche){
+  const map = {'HoReCa':'Еда/Досуг','Бьюти':'Городские','Клиники':'Городские','Застройщики':'Авто/Недвижимость','Образование':'Городские','E-commerce':'Реклама/Торговля','Автобизнес':'Авто/Недвижимость','Рекламное агентство':'Реклама/Торговля','Другое':''};
+  return map[niche]||'';
+}
+
+function cycleLeadStatus(id){
+  const leads=getLeads();
+  const lead=leads.find(l=>l.id===id);
+  if(!lead) return;
+  const idx=LEAD_STATUS_CYCLE.indexOf(lead.status);
+  lead.status = idx>=0 && idx<LEAD_STATUS_CYCLE.length-1 ? LEAD_STATUS_CYCLE[idx+1] : 'rejected';
+  lead.lastContact = new Date().toISOString();
+  saveLeads(leads); render();
+}
+
+function deleteLead(id){
+  if(!confirm('Удалить лид?')) return;
+  const leads=getLeads().filter(l=>l.id!==id);
+  saveLeads(leads); render(); showToast('🗑 Лид удалён');
+}
+
+function showLeadForm(editId){
+  const leads=getLeads();
+  const lead = editId ? leads.find(l=>l.id===editId) : null;
+  const v = lead || {name:'',city:'',niche:'HoReCa',phone:'',whatsapp:'',instagram:'',igFollowers:'',website:'',rating:3,notes:''};
+  const citiesOpts = (typeof PABLIKI_CITIES!=='undefined'?PABLIKI_CITIES:[]).map(c=>`<option value="${c}">`).join('');
+  const nichesOpts = LEAD_NICHES.map(n=>`<option value="${n}" ${v.niche===n?'selected':''}>${n}</option>`).join('');
+
+  document.getElementById('modalContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${editId?'✏️ Редактировать':'➕ Добавить'} лид</h3>
+    <div class="add-form show">
+      <input id="lf_name" placeholder="Название компании *" value="${v.name}" list="lf_cities_list">
+      <input id="lf_city" placeholder="Город *" value="${v.city}" list="lf_cities_dl">
+      <datalist id="lf_cities_dl">${citiesOpts}</datalist>
+      <select id="lf_niche">${nichesOpts}</select>
+      <input id="lf_phone" placeholder="Телефон" value="${v.phone}" type="tel">
+      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <input type="checkbox" id="lf_wa_same" ${v.whatsapp===v.phone&&v.phone?'checked':''} onchange="if(this.checked)document.getElementById('lf_wa').value=document.getElementById('lf_phone').value"> Совпадает с телефоном
+      </label>
+      <input id="lf_wa" placeholder="WhatsApp" value="${v.whatsapp}">
+      <input id="lf_ig" placeholder="Instagram (без @)" value="${v.instagram}">
+      <input id="lf_igf" placeholder="Подписчики Instagram" value="${v.igFollowers}" type="number">
+      <input id="lf_web" placeholder="Сайт" value="${v.website||''}">
+      <label style="font-size:12px;color:var(--text2);margin-bottom:4px">Рейтинг: <strong id="lf_rat_val">${v.rating||3}</strong></label>
+      <input type="range" id="lf_rating" min="1" max="5" step="0.5" value="${v.rating||3}" oninput="document.getElementById('lf_rat_val').textContent=this.value" style="margin-bottom:8px">
+      <textarea id="lf_notes" placeholder="Заметки" rows="3">${v.notes||''}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveLead('${editId||''}')">💾 Сохранить</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('modalOverlay').classList.remove('show')">Отмена</button>
+      </div>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function saveLead(editId){
+  const name=document.getElementById('lf_name').value.trim();
+  const city=document.getElementById('lf_city').value.trim();
+  if(!name||!city){showToast('Заполните название и город');return;}
+  const phone=document.getElementById('lf_phone').value.trim();
+  const wa = document.getElementById('lf_wa_same').checked ? phone : document.getElementById('lf_wa').value.trim();
+  const lead = {
+    id: editId || ('lead_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)),
+    name, city,
+    niche: document.getElementById('lf_niche').value,
+    phone, whatsapp: wa,
+    instagram: document.getElementById('lf_ig').value.trim().replace(/^@/,''),
+    igFollowers: parseInt(document.getElementById('lf_igf').value)||0,
+    website: document.getElementById('lf_web').value.trim(),
+    rating: parseFloat(document.getElementById('lf_rating').value)||3,
+    notes: document.getElementById('lf_notes').value.trim(),
+    status: 'new',
+    created: new Date().toISOString(),
+    lastContact: new Date().toISOString(),
+    podborka: false
+  };
+  lead.score = scoreLead(lead);
+  const leads = getLeads();
+  if(editId){
+    const idx=leads.findIndex(l=>l.id===editId);
+    if(idx>=0){lead.status=leads[idx].status;lead.created=leads[idx].created;lead.podborka=leads[idx].podborka;leads[idx]=lead;}
+  } else { leads.push(lead); }
+  saveLeads(leads);
+  document.getElementById('modalOverlay').classList.remove('show');
+  render(); showToast(editId?'✏️ Лид обновлён':'✅ Лид добавлен');
+}
+
+function showImportCSV(){
+  document.getElementById('modalContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">📥 Импорт CSV</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Формат: name,city,niche,phone,instagram (гибкий порядок)</p>
+    <input type="file" accept=".csv,.txt" id="csvFileInput" style="margin-bottom:12px;font-size:13px;color:var(--text)">
+    <button class="btn btn-primary" style="width:100%" onclick="parseCSV()">📥 Загрузить</button>`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function parseCSV(){
+  const fileInput=document.getElementById('csvFileInput');
+  if(!fileInput.files.length){showToast('Выберите файл');return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const lines=ev.target.result.split(/\r?\n/).filter(l=>l.trim());
+    if(lines.length<2){showToast('Файл пуст');return;}
+    const headerLine=lines[0].toLowerCase();
+    const sep=headerLine.includes('\t')?'\t':headerLine.includes(';')?';':',';
+    const headers=headerLine.split(sep).map(h=>h.trim());
+    const colMap={};
+    ['name','city','niche','phone','instagram'].forEach(f=>{
+      const idx=headers.findIndex(h=>h.includes(f)||h.includes({name:'название',city:'город',niche:'ниша',phone:'телефон',instagram:'instagram'}[f]||f));
+      if(idx>=0) colMap[f]=idx;
+    });
+    const newLeads=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=lines[i].split(sep).map(c=>c.trim().replace(/^["']|["']$/g,''));
+      if(!cols.length) continue;
+      const lead={
+        id:'lead_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+i,
+        name:cols[colMap.name!==undefined?colMap.name:0]||'',
+        city:cols[colMap.city!==undefined?colMap.city:1]||'',
+        niche:cols[colMap.niche!==undefined?colMap.niche:2]||'Другое',
+        phone:cols[colMap.phone!==undefined?colMap.phone:3]||'',
+        whatsapp:cols[colMap.phone!==undefined?colMap.phone:3]||'',
+        instagram:cols[colMap.instagram!==undefined?colMap.instagram:4]||'',
+        igFollowers:0,website:'',rating:3,notes:'',status:'new',
+        created:new Date().toISOString(),lastContact:new Date().toISOString(),podborka:false
+      };
+      lead.score=scoreLead(lead);
+      if(lead.name) newLeads.push(lead);
+    }
+    if(!newLeads.length){showToast('Лидов не найдено');return;}
+    if(!confirm('Найдено '+newLeads.length+' лидов. Импортировать?')) return;
+    const leads=getLeads().concat(newLeads);
+    saveLeads(leads);
+    document.getElementById('modalOverlay').classList.remove('show');
+    render(); showToast('✅ Импортировано: '+newLeads.length);
+  };
+  reader.readAsText(fileInput.files[0]);
+}
+
+function showWATemplates(id){
+  const leads=getLeads();
+  const lead=leads.find(l=>l.id===id);
+  if(!lead) return;
+  const cityPabliks = typeof PABLIKI_DB!=='undefined' ? PABLIKI_DB.filter(p=>p.c===lead.city) : [];
+  const count=cityPabliks.length;
+  const subs=cityPabliks.reduce((s,p)=>s+p.s,0);
+  const price=cityPabliks.length?Math.min(...cityPabliks.map(p=>p.p)):0;
+  const fmt=n=>n.toLocaleString('ru-RU');
+
+  const btns = WA_TEMPLATES.map((t,i)=>{
+    let msg=t.text.replace(/{name}/g,lead.name).replace(/{city}/g,lead.city).replace(/{niche}/g,lead.niche)
+      .replace(/{count}/g,count).replace(/{subs}/g,fmt(subs)).replace(/{price}/g,fmt(price)).replace(/{link}/g,'pabliki.kz');
+    const waNum=(lead.whatsapp||lead.phone||'').replace(/\D/g,'');
+    const url='https://wa.me/'+(waNum||'')+'?text='+encodeURIComponent(msg);
+    return `<a href="${url}" target="_blank" rel="noopener" class="btn btn-ghost" style="display:block;text-align:left;margin-bottom:8px;font-size:12px;text-decoration:none;color:var(--text)">
+      <strong>${t.name}</strong><br><span style="color:var(--text2);font-size:11px">${msg.slice(0,80)}...</span></a>`;
+  }).join('');
+
+  document.getElementById('modalContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">📤 WhatsApp шаблон</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Выберите шаблон для ${lead.name}</p>
+    ${btns}`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function leadPodborka(id){
+  const leads=getLeads();
+  const lead=leads.find(l=>l.id===id);
+  if(!lead) return;
+  pendingLeadRef = id;
+  selCities.clear();
+  selCities.add(lead.city);
+  const cat=nicheToCategory(lead.niche);
+  if(cat){selCats.clear();selCats.add(cat);}
+  switchView('selection');
+}
+
+function renderLeads(app){
+  const leads=getLeads().map(l=>{l.score=scoreLead(l);return l;});
+  const counts={all:leads.length,new:0,sent:0,dialog:0,client:0,rejected:0};
+  leads.forEach(l=>counts[l.status]=(counts[l.status]||0)+1);
+
+  // Filter
+  let filtered=leads;
+  if(leadStatusFilter!=='all') filtered=filtered.filter(l=>l.status===leadStatusFilter);
+  if(leadSearch){
+    const q=leadSearch.toLowerCase();
+    filtered=filtered.filter(l=>(l.name+' '+l.city+' '+l.niche).toLowerCase().includes(q));
+  }
+  // Sort
+  if(leadSort==='score') filtered.sort((a,b)=>b.score-a.score);
+  else if(leadSort==='date') filtered.sort((a,b)=>new Date(b.created)-new Date(a.created));
+  else if(leadSort==='city') filtered.sort((a,b)=>a.city.localeCompare(b.city));
+
+  const fmt=n=>n?n.toLocaleString('ru-RU'):'0';
+  const statusChips = [
+    {key:'all',label:'Все',count:counts.all},
+    {key:'new',label:'🆕 Новые',count:counts.new},
+    {key:'sent',label:'📤 Отправлено',count:counts.sent},
+    {key:'dialog',label:'💬 В диалоге',count:counts.dialog},
+    {key:'client',label:'✅ Клиенты',count:counts.client},
+    {key:'rejected',label:'❌ Отказ',count:counts.rejected}
+  ];
+  const sortBtns = [{key:'score',label:'По скорингу'},{key:'date',label:'По дате'},{key:'city',label:'По городу'}];
+
+  const cardsHtml = filtered.map(l=>{
+    const sl=scoreLabel(l.score);
+    const igPart = l.instagram ? ` | 📱 @${l.instagram}${l.igFollowers?' ('+fmt(l.igFollowers)+')':''}` : '';
+    const phonePart = l.phone ? `📞 ${l.phone}` : '';
+    const waPart = l.whatsapp ? `💬 WA` : '';
+    const infoParts = [phonePart,waPart].filter(Boolean).join(' | ');
+    return `<div class="lead-card">
+      <div class="lead-top">
+        <span class="lead-score ${sl.cls}">${sl.text} ${l.score}</span>
+        <span class="lead-name">${l.name}</span>
+        <span class="lead-status" data-s="${l.status}" onclick="cycleLeadStatus('${l.id}')">${LEAD_STATUSES[l.status]||l.status}</span>
+      </div>
+      <div class="lead-info">📍 ${l.city} | 🏢 ${l.niche}${igPart}</div>
+      ${infoParts?`<div class="lead-info">${infoParts}</div>`:''}
+      <div class="lead-actions">
+        <button onclick="leadPodborka('${l.id}')">📋 Подборка</button>
+        <button onclick="showWATemplates('${l.id}')">📤 WhatsApp</button>
+        <button onclick="showLeadForm('${l.id}')">✏️</button>
+        <button onclick="deleteLead('${l.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="header">
+      <h1 style="font-size:22px">🎯 ЛИДЫ</h1>
+      <p>Pipeline вашего бизнеса</p>
+    </div>
+    <div class="lead-header-actions">
+      <button class="btn btn-primary" onclick="showLeadForm()">➕ Добавить</button>
+      <button class="btn btn-ghost" onclick="showImportCSV()">📥 Импорт CSV</button>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-card"><div class="num" style="color:var(--primary)">${counts.all}</div><div class="label">Всего</div></div>
+      <div class="stat-card"><div class="num" style="color:#f59e0b">${counts.sent}</div><div class="label">Отправлено</div></div>
+      <div class="stat-card"><div class="num" style="color:#8b5cf6">${counts.dialog}</div><div class="label">В диалоге</div></div>
+      <div class="stat-card"><div class="num" style="color:#10b981">${counts.client}</div><div class="label">Клиенты</div></div>
+    </div>
+    <div class="lead-filters">
+      <input class="search-input" placeholder="🔍 Поиск по названию, городу, нише..." value="${leadSearch}" oninput="leadSearch=this.value;render()">
+      <div class="filter-chips">
+        ${statusChips.map(c=>`<button class="filter-chip ${leadStatusFilter===c.key?'active':''}" onclick="leadStatusFilter='${c.key}';render()">${c.label} (${c.count})</button>`).join('')}
+      </div>
+      <div class="sort-row">
+        ${sortBtns.map(s=>`<button class="sort-btn ${leadSort===s.key?'active':''}" onclick="leadSort='${s.key}';render()">${s.label}</button>`).join('')}
+      </div>
+    </div>
+    ${filtered.length ? cardsHtml : '<p style="text-align:center;color:var(--text3);padding:40px 0">Нет лидов. Добавьте первый! ➕</p>'}
+  `;
 }
 
 // ===================== SELECTION / ПОДБОРКА =====================
