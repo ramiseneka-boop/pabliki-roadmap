@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Pabliki Growth — Roadmap</title>
-<script src="pabliki-data.js?v=18"></script>
-<script src="leads-data.js?v=18"></script>
+<script src="pabliki-data.js?v=19"></script>
+<script src="leads-data.js?v=19"></script>
 <!-- leads-2gis.js загружается лениво при открытии вкладки Парсинг -->
 <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="manifest" href="manifest.json">
@@ -347,11 +347,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 </head>
 <body>
 
-<div id="splash">
-  <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
-  <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
-  <p style="margin-top:8px">Загрузка...</p>
-</div>
+<!-- splash убран для скорости -->
 
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
@@ -2473,12 +2469,7 @@ function shareSel(){
 // Preload logo base64 for PDF export
 fetch('logo-dark.png').then(r=>r.blob()).then(b=>{const rd=new FileReader();rd.onload=()=>{window._logoDarkB64=rd.result.split(',')[1]};rd.readAsDataURL(b)}).catch(()=>{});
 
-// Убираем сплеш сразу — не ждём load
-(function hideSplash(){
-  const s = document.getElementById('splash');
-  if(s){s.style.opacity='0'; setTimeout(()=>s.remove(), 600);}
-})();
-try { render(); } catch(e) { console.error('render error:', e); }
+try { render(); } catch(e) { console.error('render error:', e); document.getElementById('app').innerHTML='<p style="color:red;padding:20px">Ошибка: '+e.message+'</p>'; }
 </script>
 </body>
 </html>
