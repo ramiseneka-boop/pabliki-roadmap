@@ -580,7 +580,7 @@ const DEFAULT_PHASES = [
     tasks:[
       {id:'t1',title:'Новое позиционирование: «Городская медиасеть»',desc:'Обновить тексты на сайте, КП, презентациях. Pabliki = билборды в лентах.',tags:['priority-high','type-marketing'],done:false},
       {id:'t2',title:'Починить robots.txt',desc:'Заменить your-production-domain.com на pabliki.kz',tags:['priority-high','type-seo'],done:false},
-      {id:'t3',title:'Исправить <h1> на главной',desc:'Главный заголовок должен быть h1, не h2',tags:['priority-high','type-seo'],done:false},
+      {id:'t3',title:'Исправить &lt;h1&gt; на главной',desc:'Главный заголовок должен быть h1, не h2',tags:['priority-high','type-seo'],done:false},
       {id:'t4',title:'Добавить canonical теги',desc:'<link rel="canonical"> на каждую страницу',tags:['priority-high','type-seo'],done:false},
       {id:'t5',title:'JSON-LD разметка',desc:'Organization + LocalBusiness + FAQ schema',tags:['priority-med','type-seo'],done:false},
       {id:'t6',title:'Уникальные meta description',desc:'Для каждой страницы — свой description',tags:['priority-med','type-seo'],done:false},
@@ -1547,7 +1547,7 @@ let pendingLeadRef = null;
 const WA_TEMPLATES = [
   {name:'🟢 Касание 1: Знакомство', text:'Здравствуйте, {name}! 👋\n\nМеня зовут Виктория, я менеджер Pabliki.kz — городская медиасеть Казахстана.\n\nМы помогаем бизнесам в сфере «{niche}» привлекать клиентов через размещение в Instagram-пабликах. В {city} у нас {count} пабликов с аудиторией {subs}+ подписчиков.\n\nПодскажите, используете ли вы сейчас рекламу в городских пабликах?'},
   {name:'📋 Касание 2: Подборка', text:'{name}, как обещала — подготовила персональную подборку! 📋\n\nПодобрала {count} пабликов в {city} для вашей ниши «{niche}».\n\n📊 Что входит:\n✅ Пост + сторис в каждом паблике\n✅ Модерация контента\n✅ Размещение в лучшее время\n✅ Отчёт с аналитикой на 4-й день\n\nОтправляю PDF с полным списком — какой бюджет ближе?'},
-  {name:'📊 Касание 3: Кейс', text:'{name}, хотела поделиться результатом 📊\n\nНаш клиент из ниши «{niche}» в {city} разместился в 8 пабликах и получил:\n• 150 000+ охват за 3 дня\n• 40+ заявок в Direct\n• Окупил вложения в 3 раза\n\nСекрет — нативный формат: не прямая реклама, а полезный контент.\n\nХотите — подготовлю аналогичную стратегию для вас?'},
+  {name:'📊 Касание 3: Кейс', text:'{name}, хотела поделиться результатом 📊\n\nНаш клиент из ниши «{niche}» в {city} разместился в нескольких пабликах и получил:\n• Десятки тысяч охвата за первые дни\n• Заявки в Direct уже на следующий день\n• Вложения окупились с хорошим запасом\n\nСекрет — нативный формат: не прямая реклама, а полезный контент.\n\nХотите — подготовлю аналогичную стратегию для вас?'},
   {name:'🎯 Касание 4: Спецпредложение', text:'{name}, добрый день! 🎯\n\nНа этой неделе осталось 3 свободных слота на размещение в {city}.\n\nСпециальное предложение:\n✅ {count} пабликов + бонус 2 сторис\n✅ Скидка 15% на первое размещение\n✅ Бесплатная концепция контента\n\nХотите забронировать слот? Просто напишите «Да» — и я всё оформлю.'},
   {name:'💬 Касание 5: Follow-up', text:'{name}, добрый день!\n\nНе хочу навязываться — просто проверяю, актуален ли ещё вопрос продвижения в {city}?\n\nЕсли сейчас не время — совершенно нормально. Могу вернуться позже.\n\nА если есть вопросы — я всегда на связи 😊'},
   {name:'🔄 Касание 6: Реактивация', text:'{name}, здравствуйте!\n\nУ нас обновления — добавили новые паблики в {city} с аудиторией 500 000+.\n\nТакже запустили формат «Тест-драйв»: 3 паблика — чтобы оценить результат без больших вложений.\n\nИнтересно попробовать?'},
@@ -1988,9 +1988,9 @@ function openLeadCRM(idx){
         return waNum ? '<a href="https://wa.me/' + waNum + '?text=' + encodeURIComponent(msg) + '" target="_blank" onclick="event.stopPropagation();addTouch(\'' + key + '\',\'' + t.name + '\')" class="btn btn-ghost" style="text-align:left;font-size:12px;padding:8px 12px;text-decoration:none;display:block">' + t.name + '</a>' : '';
       }).filter(Boolean).join('')}
     </div>
-    <button onclick="document.getElementById('modalOverlay').style.display='none'" style="width:100%;padding:10px;border-radius:var(--radius);background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer">Закрыть</button>
+    <button onclick="document.getElementById('modalOverlay').classList.remove('show')" style="width:100%;padding:10px;border-radius:var(--radius);background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer">Закрыть</button>
   `;
-  overlay.style.display='flex';
+  overlay.classList.add('show');
 }
 
 function setParsStatusModal(key, status){
@@ -2025,7 +2025,7 @@ let parsSubTab = 'base'; // base | mailing | crm
 const PARS_WA_TEMPLATES = [
   {name:'🟢 Касание 1: Знакомство', text:'Здравствуйте, {name}! 👋\n\nМеня зовут Виктория, я менеджер Pabliki.kz — городская медиасеть Казахстана.\n\nМы помогаем бизнесам в сфере «{niche}» привлекать клиентов через Instagram-паблики. В {city} у нас сеть пабликов с охватом от 50 000 подписчиков.\n\nПодскажите, используете ли вы сейчас рекламу в городских пабликах?'},
   {name:'📋 Касание 2: Подборка', text:'{name}, подготовила для вас персональную подборку пабликов в {city}! 📋\n\n📊 Что входит:\n✅ Пост + сторис в городских пабликах\n✅ Нативный формат (не прямая реклама)\n✅ Модерация контента\n✅ Отчёт с аналитикой\n\nОтправить PDF с подробностями?'},
-  {name:'📊 Касание 3: Кейс', text:'{name}, хотела поделиться результатом 📊\n\nНаш клиент из ниши «{niche}» в {city} разместился в 8 пабликах:\n• 150 000+ охват за 3 дня\n• 40+ заявок в Direct\n• Окупил вложения в 3 раза\n\nСекрет — нативный формат. Аудитория не пролистывает, а сохраняет и репостит.\n\nМожем подготовить аналогичную стратегию для вас?'},
+  {name:'📊 Касание 3: Кейс', text:'{name}, хотела поделиться результатом 📊\n\nНаш клиент из ниши «{niche}» в {city} разместился в нескольких пабликах:\n• Десятки тысяч охвата за первые дни\n• Заявки в Direct уже на следующий день\n• Вложения окупились с хорошим запасом\n\nСекрет — нативный формат. Аудитория не пролистывает, а сохраняет и репостит.\n\nМожем подготовить аналогичную стратегию для вас?'},
   {name:'🎯 Касание 4: Спецпредложение', text:'{name}, добрый день! 🎯\n\nНа этой неделе осталось 3 слота на размещение в {city}.\n\nСпециальное предложение:\n✅ Размещение в топ-пабликах\n✅ Скидка 15% на первое размещение\n✅ Бесплатная концепция контента\n\nХотите забронировать? Просто напишите «Да» 👇'},
   {name:'💬 Касание 5: Follow-up', text:'{name}, добрый день!\n\nНе хочу навязываться — просто проверяю, актуален ли вопрос продвижения?\n\nЕсли сейчас не время — совершенно нормально. Могу вернуться позже.\n\nА если есть вопросы — я на связи 😊'},
   {name:'🔄 Касание 6: Реактивация', text:'{name}, здравствуйте!\n\nУ нас обновления — добавили новые паблики в {city} с аудиторией 500 000+.\n\nЗапустили формат «Тест-драйв»: 3 паблика — оцените результат без больших вложений.\n\nИнтересно попробовать?'},
@@ -2037,7 +2037,7 @@ function renderParsing(app){
   if(typeof LEADS_2GIS === 'undefined' || !LEADS_2GIS || !LEADS_2GIS.length){
     if(!_leads2gisLoading){
       _leads2gisLoading = true;
-      app.innerHTML = '<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p>⏳ Загрузка базы лидов...</p></div><div style="text-align:center;padding:40px"><div style="font-size:32px;animation:spin 1s linear infinite;display:inline-block">🔄</div><p style="margin-top:12px;color:var(--text2)">36 000+ лидов, подождите...</p></div>';
+      app.innerHTML = '<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p>⏳ Загрузка базы лидов...</p></div><div style="text-align:center;padding:40px"><div style="font-size:32px;animation:spin 1s linear infinite;display:inline-block">🔄</div><p style="margin-top:12px;color:var(--text2)">Загрузка базы лидов, подождите...</p></div>';
       const s = document.createElement('script');
       s.src = 'leads-2gis.js';
       s.onload = ()=>{ _leads2gisLoading=false; render(); };
