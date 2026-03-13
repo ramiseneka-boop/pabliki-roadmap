@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Pabliki Growth — Roadmap</title>
-<script defer src="pabliki-data.js?v=17"></script>
-<script defer src="leads-data.js?v=17"></script>
+<script src="pabliki-data.js?v=18"></script>
+<script src="leads-data.js?v=18"></script>
 <!-- leads-2gis.js загружается лениво при открытии вкладки Парсинг -->
-<script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2473,18 +2473,12 @@ function shareSel(){
 // Preload logo base64 for PDF export
 fetch('logo-dark.png').then(r=>r.blob()).then(b=>{const rd=new FileReader();rd.onload=()=>{window._logoDarkB64=rd.result.split(',')[1]};rd.readAsDataURL(b)}).catch(()=>{});
 
-// Убираем сплеш максимум через 3 сек (страховка от зависания)
-setTimeout(() => {
+// Убираем сплеш сразу — не ждём load
+(function hideSplash(){
   const s = document.getElementById('splash');
   if(s){s.style.opacity='0'; setTimeout(()=>s.remove(), 600);}
-  if(typeof render === 'function') render();
-}, 3000);
-
-window.addEventListener('load', () => {
-  const s = document.getElementById('splash');
-  if(s){s.style.opacity='0'; setTimeout(()=>s.remove(), 600);}
-  render();
-});
+})();
+try { render(); } catch(e) { console.error('render error:', e); }
 </script>
 </body>
 </html>
