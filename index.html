@@ -10,6 +10,7 @@
 <title>Pabliki Growth — Roadmap</title>
 <script src="pabliki-data.js"></script>
 <script src="leads-data.js"></script>
+<script src="leads-2gis.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -213,7 +214,7 @@ body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-t
 
 /* ======================== NAV ======================== */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card-bg);border-top:1px solid var(--border);display:flex;justify-content:center;gap:0;padding:8px 0 calc(8px + var(--safe-bottom));z-index:50;transition:background .3s}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;cursor:pointer;transition:color .2s;color:var(--text3)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;cursor:pointer;transition:color .2s;color:var(--text3)}
 .nav-item.active{color:var(--primary)}
 .nav-item .icon{font-size:16px}
 .nav-item .label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
@@ -359,6 +360,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   <div class="nav-item active" onclick="switchView('roadmap')"><span class="icon">🗺️</span><span class="label">Roadmap</span></div>
   <div class="nav-item" onclick="switchView('selection')"><span class="icon">📋</span><span class="label">Подборка</span></div>
   <div class="nav-item" onclick="switchView('leads')"><span class="icon">🎯</span><span class="label">Лиды</span></div>
+  <div class="nav-item" onclick="switchView('parsing')"><span class="icon">🔍</span><span class="label">Парсинг</span></div>
   <div class="nav-item" onclick="switchView('finance')"><span class="icon">💰</span><span class="label">Экономика</span></div>
   <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
 </div>
@@ -811,6 +813,7 @@ function render(){
   if(currentView === 'roadmap') renderRoadmap(app);
   else if(currentView === 'selection') renderSelection(app);
   else if(currentView === 'leads') renderLeads(app);
+  else if(currentView === 'parsing') renderParsing(app);
   else if(currentView === 'finance') renderFinance(app);
   else renderSettings(app);
   updateNav();
@@ -1224,7 +1227,7 @@ function setFilter(f){ currentFilter = f; render(); }
 function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
-    const views = ['roadmap','selection','leads','finance','settings'];
+    const views = ['roadmap','selection','leads','parsing','finance','settings'];
     el.classList.toggle('active', views[i]===currentView);
   });
 }
@@ -1719,6 +1722,209 @@ function renderLeads(app){
     </div>
     ${filtered.length ? cardsHtml : '<p style="text-align:center;color:var(--text3);padding:40px 0">Нет лидов. Добавьте первый! ➕</p>'}
   `;
+}
+
+// ===================== ПАРСИНГ 2GIS =====================
+let parsFilterCities = new Set();
+let parsFilterNiches = new Set();
+let parsSearch = '';
+let parsShowCount = 100;
+let parsMsgTemplate = localStorage.getItem('pabliki_pars_tpl') || 'Здравствуйте, {name}! Мы помогаем бизнесам в {city} расти в соцсетях. Интересно?';
+let parsInterval = parseInt(localStorage.getItem('pabliki_pars_interval')) || 30;
+let parsLimit = parseInt(localStorage.getItem('pabliki_pars_limit')) || 15;
+
+function getParsCRM(){
+  try{ return JSON.parse(localStorage.getItem('pabliki_parsing_crm'))||{}; }catch(e){ return {}; }
+}
+function saveParsCRM(crm){ localStorage.setItem('pabliki_parsing_crm', JSON.stringify(crm)); }
+
+function getParsStatus(lead){
+  const crm = getParsCRM();
+  const key = lead.p || lead.n;
+  return crm[key]?.status || 'new';
+}
+
+function setParsStatus(lead, status){
+  const crm = getParsCRM();
+  const key = lead.p || lead.n;
+  if(!crm[key]) crm[key] = {status:'new', touches:[]};
+  crm[key].status = status;
+  saveParsCRM(crm);
+  render();
+}
+
+const PARS_STATUSES = [
+  {id:'new',icon:'🆕',label:'Новый'},
+  {id:'sent',icon:'📤',label:'Отправлено'},
+  {id:'dialog',icon:'💬',label:'В диалоге'},
+  {id:'client',icon:'✅',label:'Клиент'},
+  {id:'refused',icon:'❌',label:'Отказ'}
+];
+
+function openLeadCRM(idx){
+  const leads = typeof LEADS_2GIS!=='undefined'?LEADS_2GIS:[];
+  const lead = leads[idx]; if(!lead) return;
+  const crm = getParsCRM();
+  const key = lead.p || lead.n;
+  const data = crm[key] || {status:'new', touches:[]};
+  const st = PARS_STATUSES;
+  const overlay = document.getElementById('modalOverlay');
+  const content = document.getElementById('modalContent');
+  content.innerHTML = `
+    <h3 style="margin-bottom:12px">${lead.n}</h3>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">📍 ${lead.c} · ${lead.ni}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      ${lead.p?`<a href="tel:${lead.p}" style="color:var(--primary)">📞 ${lead.p}</a>`:''}
+      ${lead.w?`<a href="https://wa.me/${lead.w.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--green)">💬 WhatsApp</a>`:''}
+      ${lead.ig?`<a href="https://instagram.com/${lead.ig.replace('@','')}" target="_blank" style="color:var(--peach)">📸 ${lead.ig}</a>`:''}
+    </div>
+    <div style="margin-bottom:12px"><b>Статус:</b></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+      ${st.map(s=>`<span class="filter-chip${data.status===s.id?' active':''}" onclick="setParsStatusModal('${key}','${s.id}')">${s.icon} ${s.label}</span>`).join('')}
+    </div>
+    <div style="margin-bottom:8px"><b>Касания:</b></div>
+    <div id="crmTouches" style="max-height:200px;overflow-y:auto;margin-bottom:12px">
+      ${data.touches.length?data.touches.map(t=>`<div style="font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">${t.date} — ${t.note}</div>`).join(''):'<div style="font-size:12px;color:var(--text3)">Пока нет касаний</div>'}
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="crmNote" placeholder="Заметка..." style="flex:1;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px">
+      <button onclick="addTouch('${key}')" style="padding:8px 16px;border-radius:var(--radius);background:var(--primary);color:var(--primary-fg);border:none;font-weight:600;cursor:pointer">+</button>
+    </div>
+    <button onclick="document.getElementById('modalOverlay').style.display='none'" style="margin-top:16px;width:100%;padding:10px;border-radius:var(--radius);background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer">Закрыть</button>
+  `;
+  overlay.style.display='flex';
+}
+
+function setParsStatusModal(key, status){
+  const crm = getParsCRM();
+  if(!crm[key]) crm[key]={status:'new',touches:[]};
+  crm[key].status = status;
+  saveParsCRM(crm);
+  // re-render modal status chips
+  const st = PARS_STATUSES;
+  document.querySelectorAll('#modalContent .filter-chip').forEach((el,i)=>{
+    if(i<st.length) el.classList.toggle('active', st[i].id===status);
+  });
+}
+
+function addTouch(key){
+  const note = document.getElementById('crmNote')?.value;
+  if(!note) return;
+  const crm = getParsCRM();
+  if(!crm[key]) crm[key]={status:'new',touches:[]};
+  crm[key].touches.push({date:new Date().toLocaleString('ru-RU'), note});
+  saveParsCRM(crm);
+  document.getElementById('crmNote').value='';
+  // refresh touches list
+  const container = document.getElementById('crmTouches');
+  if(container) container.innerHTML = crm[key].touches.map(t=>`<div style="font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">${t.date} — ${t.note}</div>`).join('');
+}
+
+function renderParsing(app){
+  if(typeof LEADS_2GIS === 'undefined' || !LEADS_2GIS.length){
+    app.innerHTML = '<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p style="color:var(--red)">Загрузите leads-2gis.js</p></div>';
+    return;
+  }
+  const leads = LEADS_2GIS;
+  const crm = getParsCRM();
+
+  // compute stats
+  const cityCount = {};
+  const nicheCount = {};
+  leads.forEach(l=>{
+    cityCount[l.c]=(cityCount[l.c]||0)+1;
+    nicheCount[l.ni]=(nicheCount[l.ni]||0)+1;
+  });
+  const topCities = Object.entries(cityCount).sort((a,b)=>b[1]-a[1]);
+  const topNiches = Object.entries(nicheCount).sort((a,b)=>b[1]-a[1]);
+
+  // filter
+  let filtered = leads;
+  if(parsFilterCities.size) filtered = filtered.filter(l=>parsFilterCities.has(l.c));
+  if(parsFilterNiches.size) filtered = filtered.filter(l=>parsFilterNiches.has(l.ni));
+  if(parsSearch) filtered = filtered.filter(l=>l.n.toLowerCase().includes(parsSearch.toLowerCase()));
+
+  const shown = filtered.slice(0, parsShowCount);
+  const statusIcon = (l)=>{
+    const key = l.p||l.n;
+    const s = crm[key]?.status||'new';
+    return PARS_STATUSES.find(x=>x.id===s)?.icon||'🆕';
+  };
+
+  let html = `
+    <div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p>${leads.length.toLocaleString('ru-RU')} лидов</p></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--card-bg);padding:12px;border-radius:var(--radius);box-shadow:var(--shadow)">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:700">Городов</div>
+        <div style="font-size:24px;font-weight:800;color:var(--primary)">${topCities.length}</div>
+      </div>
+      <div style="background:var(--card-bg);padding:12px;border-radius:var(--radius);box-shadow:var(--shadow)">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:700">Ниш</div>
+        <div style="font-size:24px;font-weight:800;color:var(--accent)">${topNiches.length}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <input placeholder="🔎 Поиск по имени..." value="${parsSearch}" oninput="parsSearch=this.value;parsShowCount=100;render()" style="width:100%;padding:10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px">
+    </div>
+
+    <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:var(--text2)">ГОРОДА:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+      ${topCities.slice(0,20).map(([c,n])=>`<span class="filter-chip${parsFilterCities.has(c)?' active':''}" onclick="parsFilterCities.has('${c.replace(/'/g,"\\'")}')? parsFilterCities.delete('${c.replace(/'/g,"\\'")}'):parsFilterCities.add('${c.replace(/'/g,"\\'")}');parsShowCount=100;render()">${c} (${n})</span>`).join('')}
+    </div>
+
+    <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:var(--text2)">НИШИ:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px">
+      ${topNiches.slice(0,20).map(([ni,n])=>`<span class="filter-chip${parsFilterNiches.has(ni)?' active':''}" onclick="parsFilterNiches.has('${ni.replace(/'/g,"\\'")}')? parsFilterNiches.delete('${ni.replace(/'/g,"\\'")}'):parsFilterNiches.add('${ni.replace(/'/g,"\\'")}');parsShowCount=100;render()">${ni} (${n})</span>`).join('')}
+    </div>
+
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Найдено: <b>${filtered.length.toLocaleString('ru-RU')}</b> · Показано: <b>${shown.length}</b></div>
+
+    ${shown.map((l,i)=>{
+      const idx = leads.indexOf(l);
+      const waNum = l.w ? l.w.replace(/[^0-9]/g,'') : (l.p ? l.p.replace(/[^0-9]/g,'') : '');
+      return `<div onclick="openLeadCRM(${idx})" style="background:var(--card-bg);padding:12px;border-radius:var(--radius);margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${statusIcon(l)} ${l.n}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">📍 ${l.c} · ${l.ni}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
+            ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" onclick="event.stopPropagation()" style="font-size:18px;text-decoration:none">💬</a>`:''}
+            ${l.ig?`<a href="https://instagram.com/${l.ig.replace('@','')}" target="_blank" onclick="event.stopPropagation()" style="font-size:18px;text-decoration:none">📸</a>`:''}
+            ${l.p?`<a href="tel:${l.p}" onclick="event.stopPropagation()" style="font-size:18px;text-decoration:none">📞</a>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+
+    ${filtered.length > parsShowCount ? `<button onclick="parsShowCount+=100;render()" style="width:100%;padding:12px;border-radius:var(--radius);background:var(--primary);color:var(--primary-fg);border:none;font-weight:700;cursor:pointer;margin-bottom:16px">Показать ещё (${Math.min(100,filtered.length-parsShowCount)})</button>` : ''}
+
+    <div style="background:var(--card-bg);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow);margin-top:16px">
+      <h3 style="margin-bottom:12px">📲 Настройка рассылки</h3>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--text2);font-weight:600">Шаблон сообщения:</label>
+        <textarea id="parsTpl" rows="3" style="width:100%;margin-top:4px;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px;resize:vertical" oninput="parsMsgTemplate=this.value;localStorage.setItem('pabliki_pars_tpl',this.value)">${parsMsgTemplate}</textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Плейсхолдеры: {name}, {city}</div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--text2);font-weight:600">Интервал: ${parsInterval} мин</label>
+        <input type="range" min="15" max="60" value="${parsInterval}" oninput="parsInterval=+this.value;localStorage.setItem('pabliki_pars_interval',this.value);this.previousElementSibling.textContent='Интервал: '+this.value+' мин'" style="width:100%;margin-top:4px">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;color:var(--text2);font-weight:600">Лимит в день: ${parsLimit}</label>
+        <input type="range" min="5" max="30" value="${parsLimit}" oninput="parsLimit=+this.value;localStorage.setItem('pabliki_pars_limit',this.value);this.previousElementSibling.textContent='Лимит в день: '+this.value" style="width:100%;margin-top:4px">
+      </div>
+      <button onclick="launchParsMailer()" style="width:100%;padding:12px;border-radius:var(--radius);background:var(--green);color:#000;border:none;font-weight:700;cursor:pointer;font-size:14px">🚀 Запустить рассылку</button>
+    </div>
+  `;
+  app.innerHTML = html;
+}
+
+function launchParsMailer(){
+  const cmd = '/mailing template='+encodeURIComponent(parsMsgTemplate)+' interval='+parsInterval+' limit='+parsLimit;
+  window.open('tg://resolve?domain=viktoriya_shtat_bot&text='+encodeURIComponent(cmd));
 }
 
 // ===================== SELECTION / ПОДБОРКА =====================
