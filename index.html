@@ -2469,7 +2469,18 @@ function shareSel(){
 // Preload logo base64 for PDF export
 fetch('logo-dark.png').then(r=>r.blob()).then(b=>{const rd=new FileReader();rd.onload=()=>{window._logoDarkB64=rd.result.split(',')[1]};rd.readAsDataURL(b)}).catch(()=>{});
 
-try { render(); } catch(e) { console.error('render error:', e); document.getElementById('app').innerHTML='<p style="color:red;padding:20px">Ошибка: '+e.message+'</p>'; }
+try {
+  // Проверяем что state валиден
+  if(!state || !state.phases || !state.phases.length) {
+    state = {phases: JSON.parse(JSON.stringify(DEFAULT_PHASES)), customTasks:[], version:2};
+    localStorage.removeItem('pabliki_roadmap_v2');
+  }
+  render();
+  // Если app пустой после render — показываем дебаг
+  if(!document.getElementById('app').innerHTML.trim()) {
+    document.getElementById('app').innerHTML = '<p style="color:orange;padding:20px">App пустой после render. currentView=' + currentView + ', phases=' + (state?.phases?.length||0) + ', DEFAULT_PHASES=' + (typeof DEFAULT_PHASES !== 'undefined' ? DEFAULT_PHASES.length : 'undef') + '</p>';
+  }
+} catch(e) { console.error('render error:', e); document.getElementById('app').innerHTML='<p style="color:red;padding:20px">Ошибка: '+e.message+'</p>'; }
 </script>
 </body>
 </html>
