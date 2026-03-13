@@ -1351,6 +1351,7 @@ const LEAD_STATUS_CYCLE = ['new','sent','dialog','client'];
 
 let leadSearch = '';
 let leadStatusFilter = 'all';
+let leadNicheFilter = 'all';
 let leadSort = 'score';
 let pendingLeadRef = null;
 
@@ -1637,6 +1638,7 @@ function renderLeads(app){
   // Filter
   let filtered=leads;
   if(leadStatusFilter!=='all') filtered=filtered.filter(l=>l.status===leadStatusFilter);
+  if(leadNicheFilter!=='all') filtered=filtered.filter(l=>l.niche===leadNicheFilter);
   if(leadSearch){
     const q=leadSearch.toLowerCase();
     filtered=filtered.filter(l=>(l.name+' '+l.city+' '+l.niche).toLowerCase().includes(q));
@@ -1645,6 +1647,7 @@ function renderLeads(app){
   if(leadSort==='score') filtered.sort((a,b)=>b.score-a.score);
   else if(leadSort==='date') filtered.sort((a,b)=>new Date(b.created)-new Date(a.created));
   else if(leadSort==='city') filtered.sort((a,b)=>a.city.localeCompare(b.city));
+  else if(leadSort==='niche') filtered.sort((a,b)=>a.niche.localeCompare(b.niche));
 
   const fmt=n=>n?n.toLocaleString('ru-RU'):'0';
   const statusChips = [
@@ -1655,7 +1658,13 @@ function renderLeads(app){
     {key:'client',label:'✅ Клиенты',count:counts.client},
     {key:'rejected',label:'❌ Отказ',count:counts.rejected}
   ];
-  const sortBtns = [{key:'score',label:'По скорингу'},{key:'date',label:'По дате'},{key:'city',label:'По городу'}];
+  const sortBtns = [{key:'score',label:'По скорингу'},{key:'date',label:'По дате'},{key:'city',label:'По городу'},{key:'niche',label:'По нише'}];
+  
+  // Niche chips
+  const nicheIcons = {'HoReCa':'🍽️','Бьюти':'💇','Клиники':'🏥','Автобизнес':'🚗','Ритейл':'🛍️','Услуги':'🔧','Туризм':'✈️','Детские центры':'👶','Образование':'🎓','IT':'💻','Фитнес':'💪','Застройщики':'🏗️','Промышленность':'🏭','Развлечения':'🎮','Другое':'❓'};
+  const allNiches = {};
+  leads.forEach(l => { allNiches[l.niche] = (allNiches[l.niche]||0) + 1; });
+  const nicheChips = Object.entries(allNiches).sort((a,b)=>b[1]-a[1]).map(([n,c])=>({key:n,label:(nicheIcons[n]||'')+ ' ' +n,count:c}));
 
   const cardsHtml = filtered.map(l=>{
     const sl=scoreLabel(l.score);
@@ -1699,6 +1708,10 @@ function renderLeads(app){
       <input class="search-input" placeholder="🔍 Поиск по названию, городу, нише..." value="${leadSearch}" oninput="leadSearch=this.value;render()">
       <div class="filter-chips">
         ${statusChips.map(c=>`<button class="filter-chip ${leadStatusFilter===c.key?'active':''}" onclick="leadStatusFilter='${c.key}';render()">${c.label} (${c.count})</button>`).join('')}
+      </div>
+      <div class="filter-chips" style="margin-bottom:10px">
+        <button class="filter-chip ${leadNicheFilter==='all'?'active':''}" onclick="leadNicheFilter='all';render()">Все ниши</button>
+        ${nicheChips.map(c=>`<button class="filter-chip ${leadNicheFilter===c.key?'active':''}" onclick="leadNicheFilter='${c.key}';render()">${c.label} (${c.count})</button>`).join('')}
       </div>
       <div class="sort-row">
         ${sortBtns.map(s=>`<button class="sort-btn ${leadSort===s.key?'active':''}" onclick="leadSort='${s.key}';render()">${s.label}</button>`).join('')}
