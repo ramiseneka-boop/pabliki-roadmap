@@ -10,7 +10,7 @@
 <title>Pabliki Growth — Roadmap</title>
 <script src="pabliki-data.js"></script>
 <script src="leads-data.js"></script>
-<script src="leads-2gis.js"></script>
+<!-- leads-2gis.js загружается лениво при открытии вкладки Парсинг -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -342,6 +342,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .lead-actions button:active{transform:scale(0.95);background:var(--surface)}
 .lead-header-actions{display:flex;gap:8px;margin-bottom:16px}
 .lead-header-actions .btn{font-size:12px;padding:10px 16px}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -1838,9 +1839,18 @@ const PARS_WA_TEMPLATES = [
   {name:'Кейс', text:'Здравствуйте! Хотели поделиться результатом 📊\n\nНаш клиент из ниши «{niche}» в {city} получил 150+ заявок за 3 дня через городские паблики.\n\nМожем подготовить аналогичную стратегию для {name}. Интересно?'}
 ];
 
+let _leads2gisLoading = false;
 function renderParsing(app){
-  if(typeof LEADS_2GIS === 'undefined' || !LEADS_2GIS.length){
-    app.innerHTML = '<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p style="color:var(--red)">Загрузите leads-2gis.js</p></div>';
+  if(typeof LEADS_2GIS === 'undefined' || !LEADS_2GIS || !LEADS_2GIS.length){
+    if(!_leads2gisLoading){
+      _leads2gisLoading = true;
+      app.innerHTML = '<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p>⏳ Загрузка базы лидов...</p></div><div style="text-align:center;padding:40px"><div style="font-size:32px;animation:spin 1s linear infinite;display:inline-block">🔄</div><p style="margin-top:12px;color:var(--text2)">36 000+ лидов, подождите...</p></div>';
+      const s = document.createElement('script');
+      s.src = 'leads-2gis.js';
+      s.onload = ()=>{ _leads2gisLoading=false; render(); };
+      s.onerror = ()=>{ _leads2gisLoading=false; app.innerHTML='<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p style="color:var(--red)">Ошибка загрузки leads-2gis.js</p></div>'; };
+      document.head.appendChild(s);
+    }
     return;
   }
   const leads = LEADS_2GIS;
