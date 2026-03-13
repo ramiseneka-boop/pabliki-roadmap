@@ -1958,39 +1958,92 @@ function openLeadCRM(idx){
   const key = lead.p || lead.n;
   const data = crm[key] || {status:'new', touches:[]};
   const st = PARS_STATUSES;
+  const waNum = (lead.w||lead.p||'').replace(/[^0-9]/g,'');
+  const touchCount = data.touches.length;
+  // Determine current step in funnel (0-indexed)
+  const currentStep = Math.min(touchCount, 6);
+
   const overlay = document.getElementById('modalOverlay');
   const content = document.getElementById('modalContent');
+
+  // Build funnel steps
+  const funnelSteps = PARS_WA_TEMPLATES.map((t,i)=>{
+    const msg = t.text.replace(/{name}/g, lead.n).replace(/{city}/g, lead.c).replace(/{niche}/g, lead.ni);
+    const isDone = i < currentStep;
+    const isCurrent = i === currentStep;
+    const stepStyle = isDone ? 'opacity:0.5;' : isCurrent ? 'border-color:var(--primary);background:var(--surface);' : 'opacity:0.7;';
+    const checkmark = isDone ? '✅' : isCurrent ? '👉' : '⬜';
+
+    let actionBtn = '';
+    if(waNum && (isCurrent || isDone)){
+      const waUrl = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(msg);
+      actionBtn = '<a href="'+waUrl+'" target="_blank" onclick="event.stopPropagation();addTouch(\''+key.replace(/'/g,"\\'")+'\',\''+t.name.replace(/'/g,"\\'")+'\')" style="display:inline-block;margin-top:6px;padding:6px 12px;border-radius:var(--radius);background:var(--green);color:#fff;font-size:11px;font-weight:700;text-decoration:none">💬 Отправить в WhatsApp</a>';
+    }
+
+    // Special: Touch 2 = Подборка — add button to create selection
+    let selectionBtn = '';
+    if(i === 1){
+      selectionBtn = '<button onclick="goToSelectionForLead(\''+lead.c.replace(/'/g,"\\'")+'\',\''+lead.ni.replace(/'/g,"\\'")+'\')" style="display:inline-block;margin-top:6px;margin-left:6px;padding:6px 12px;border-radius:var(--radius);background:var(--primary);color:var(--primary-fg);font-size:11px;font-weight:700;border:none;cursor:pointer">📋 Создать подборку</button>';
+    }
+
+    return '<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;'+stepStyle+'">' +
+      '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px">'+checkmark+'</span><b style="font-size:12px;color:var(--text)">'+t.name+'</b></div>' +
+      (isCurrent ? '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5">'+msg.replace(/\n/g,'<br>').substring(0,150)+'...</div>' : '') +
+      '<div style="display:flex;flex-wrap:wrap;gap:4px">'+actionBtn+selectionBtn+'</div>' +
+    '</div>';
+  }).join('');
+
   content.innerHTML = `
-    <h3 style="margin-bottom:12px">${lead.n}</h3>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">📍 ${lead.c} · ${lead.ni}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-      ${lead.p?`<a href="tel:${lead.p}" style="color:var(--primary)">📞 ${lead.p}</a>`:''}
-      ${lead.w?`<a href="https://wa.me/${lead.w.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--green)">💬 WhatsApp</a>`:''}
-      ${lead.ig?`<a href="https://instagram.com/${lead.ig.replace('@','')}" target="_blank" style="color:var(--peach)">📸 ${lead.ig}</a>`:''}
+    <h3 style="margin-bottom:4px;font-size:16px">${lead.n}</h3>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">📍 ${lead.c} · ${lead.ni}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      ${lead.p?`<a href="tel:${lead.p}" style="color:var(--primary);font-size:13px">📞 ${lead.p}</a>`:''}
+      ${lead.w?`<a href="https://wa.me/${waNum}" target="_blank" style="color:var(--green);font-size:13px">💬 WhatsApp</a>`:''}
+      ${lead.ig?`<a href="https://instagram.com/${lead.ig.replace('@','')}" target="_blank" style="color:var(--peach);font-size:13px">📸 ${lead.ig}</a>`:''}
     </div>
-    <div style="margin-bottom:12px"><b>Статус:</b></div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
-      ${st.map(s=>`<span class="filter-chip${data.status===s.id?' active':''}" onclick="setParsStatusModal('${key}','${s.id}')">${s.icon} ${s.label}</span>`).join('')}
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+      ${st.map(s=>`<span class="filter-chip${data.status===s.id?' active':''}" onclick="setParsStatusModal('${key.replace(/'/g,"\\'")}','${s.id}')" style="font-size:11px;padding:4px 8px">${s.icon} ${s.label}</span>`).join('')}
     </div>
-    <div style="margin-bottom:8px"><b>Касания:</b></div>
-    <div id="crmTouches" style="max-height:200px;overflow-y:auto;margin-bottom:12px">
-      ${data.touches.length?data.touches.map(t=>`<div style="font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">${t.date} — ${t.note}</div>`).join(''):'<div style="font-size:12px;color:var(--text3)">Пока нет касаний</div>'}
+
+    <div style="margin-bottom:8px"><b style="font-size:13px">🎯 Воронка касаний</b> <span style="font-size:11px;color:var(--text3)">(${touchCount} из 7)</span></div>
+    <div style="margin-bottom:12px">${funnelSteps}</div>
+
+    <div style="margin-bottom:8px"><b style="font-size:13px">📝 История</b></div>
+    <div id="crmTouches" style="max-height:150px;overflow-y:auto;margin-bottom:8px">
+      ${data.touches.length?data.touches.slice().reverse().map(t=>`<div style="font-size:11px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">${t.date} — ${t.note}</div>`).join(''):'<div style="font-size:11px;color:var(--text3)">Нет касаний — начните с первого!</div>'}
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <input id="crmNote" placeholder="Заметка..." style="flex:1;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px">
-      <button onclick="addTouch('${key}')" style="padding:8px 16px;border-radius:var(--radius);background:var(--primary);color:var(--primary-fg);border:none;font-weight:600;cursor:pointer">+</button>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="crmNote" placeholder="Заметка..." style="flex:1;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:12px">
+      <button onclick="addTouch('${key.replace(/'/g,"\\'")}')" style="padding:8px 14px;border-radius:var(--radius);background:var(--primary);color:var(--primary-fg);border:none;font-weight:700;cursor:pointer;font-size:12px">+</button>
     </div>
-    <div style="margin-bottom:8px"><b>📤 Шаблоны WhatsApp:</b></div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
-      ${PARS_WA_TEMPLATES.map((t,i)=>{
-        const msg = t.text.replace(/{name}/g, lead.n).replace(/{city}/g, lead.c).replace(/{niche}/g, lead.ni);
-        const waNum = (lead.w||lead.p||'').replace(/[^0-9]/g,'');
-        return waNum ? '<a href="https://wa.me/' + waNum + '?text=' + encodeURIComponent(msg) + '" target="_blank" onclick="event.stopPropagation();addTouch(\'' + key + '\',\'' + t.name + '\')" class="btn btn-ghost" style="text-align:left;font-size:12px;padding:8px 12px;text-decoration:none;display:block">' + t.name + '</a>' : '';
-      }).filter(Boolean).join('')}
-    </div>
-    <button onclick="document.getElementById('modalOverlay').classList.remove('show')" style="width:100%;padding:10px;border-radius:var(--radius);background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer">Закрыть</button>
+    <button onclick="document.getElementById('modalOverlay').classList.remove('show')" style="width:100%;padding:10px;border-radius:var(--radius);background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:13px">Закрыть</button>
   `;
   overlay.classList.add('show');
+}
+
+// Go to Подборка tab with filters preset for this lead's city/niche
+function goToSelectionForLead(city, niche){
+  document.getElementById('modalOverlay').classList.remove('show');
+  // Map parsing niche to pablik category
+  const nicheToCategory = {'Рестораны':'Еда/Досуг','Красота':'Городские','Медицина':'Городские','Авто':'Авто/Недвижимость','Образование':'Городские','Фитнес':'Городские','Недвижимость':'Авто/Недвижимость','Магазины':'Реклама/Торговля','Услуги':'Городские','IT':'Городские','Доставка':'Еда/Досуг','Развлечения':'Еда/Досуг','Отели':'Городские','Финансы':'Городские','Строительство':'Авто/Недвижимость'};
+  // Reset filters
+  selCities.clear();
+  selCats.clear();
+  // Find matching city in PABLIKI_CITIES
+  if(typeof PABLIKI_CITIES!=='undefined'){
+    const match = PABLIKI_CITIES.find(c=>c.toLowerCase()===city.toLowerCase()) || 
+                  [...new Set(PABLIKI_DB.map(p=>p.c))].find(c=>c.toLowerCase()===city.toLowerCase());
+    if(match) selCities.add(match);
+  }
+  // Map niche to category
+  const cat = nicheToCategory[niche];
+  if(cat && typeof PABLIKI_CATS!=='undefined' && PABLIKI_CATS.includes(cat)) selCats.add(cat);
+  // Switch to selection tab
+  currentView = 'selection';
+  render();
+  // Show toast
+  showToast('📋 Подборка для '+city+(cat?' · '+cat:''));
 }
 
 function setParsStatusModal(key, status){
