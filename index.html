@@ -2020,6 +2020,7 @@ function addTouch(key, autoNote){
 
 const PARS_NICHE_ICONS = {'Рестораны':'🍽️','Красота':'💇','Медицина':'🏥','Авто':'🚗','Образование':'🎓','Фитнес':'💪','Недвижимость':'🏠','Магазины':'🛍️','Услуги':'🔧','IT':'💻','Доставка':'🚚','Развлечения':'🎮','Отели':'🏨','Финансы':'💰','Строительство':'🏗️'};
 let parsStatusFilter = 'all';
+let parsSubTab = 'base'; // base | mailing | crm
 
 const PARS_WA_TEMPLATES = [
   {name:'🟢 Касание 1: Знакомство', text:'Здравствуйте, {name}! 👋\n\nМеня зовут Виктория, я менеджер Pabliki.kz — городская медиасеть Казахстана.\n\nМы помогаем бизнесам в сфере «{niche}» привлекать клиентов через Instagram-паблики. В {city} у нас сеть пабликов с охватом от 50 000 подписчиков.\n\nПодскажите, используете ли вы сейчас рекламу в городских пабликах?'},
@@ -2047,8 +2048,6 @@ function renderParsing(app){
   }
   const leads = LEADS_2GIS;
   const crm = getParsCRM();
-
-  // Compute stats
   const cityCount = {};
   const nicheCount = {};
   const statusCount = {all:leads.length, new:0, sent:0, dialog:0, client:0, refused:0};
@@ -2062,102 +2061,162 @@ function renderParsing(app){
   const topCities = Object.entries(cityCount).sort((a,b)=>b[1]-a[1]);
   const topNiches = Object.entries(nicheCount).sort((a,b)=>b[1]-a[1]);
 
-  // Filter
-  let filtered = leads;
-  if(parsStatusFilter!=='all') filtered = filtered.filter(l=>{ const k=l.p||l.n; return (crm[k]?.status||'new')===parsStatusFilter; });
-  if(parsFilterCities.size) filtered = filtered.filter(l=>parsFilterCities.has(l.c));
-  if(parsFilterNiches.size) filtered = filtered.filter(l=>parsFilterNiches.has(l.ni));
-  if(parsSearch) filtered = filtered.filter(l=>l.n.toLowerCase().includes(parsSearch.toLowerCase()));
-
-  const shown = filtered.slice(0, parsShowCount);
-  const statusIcon = (l)=>{
-    const key = l.p||l.n;
-    const s = crm[key]?.status||'new';
-    return PARS_STATUSES.find(x=>x.id===s)?.icon||'🆕';
-  };
-
-  const statusChips = [
-    {key:'all',label:'Все',count:statusCount.all},
-    {key:'new',label:'🆕 Новые',count:statusCount.new},
-    {key:'sent',label:'📤 Отправлено',count:statusCount.sent},
-    {key:'dialog',label:'💬 В диалоге',count:statusCount.dialog},
-    {key:'client',label:'✅ Клиенты',count:statusCount.client},
-    {key:'refused',label:'❌ Отказ',count:statusCount.refused}
+  const subTabs = [
+    {key:'base', icon:'📋', label:'База лидов'},
+    {key:'mailing', icon:'📲', label:'Рассылка WA'},
+    {key:'crm', icon:'📊', label:'Аналитика'}
   ];
+  const subTabsHtml = '<div class="mode-toggle" style="margin-bottom:16px">'+subTabs.map(t=>
+    '<div class="mode-btn '+(parsSubTab===t.key?'active':'')+'" onclick="parsSubTab=\''+t.key+'\';render()">'+t.icon+' '+t.label+'</div>'
+  ).join('')+'</div>';
 
-  let html = `
-    <div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p>${leads.length.toLocaleString('ru-RU')} лидов из 12 городов</p></div>
+  let contentHtml = '';
 
-    <div class="stats-bar">
-      <div class="stat-card"><div class="num" style="color:var(--primary)">${topCities.length}</div><div class="label">Городов</div></div>
-      <div class="stat-card"><div class="num" style="color:var(--accent)">${topNiches.length}</div><div class="label">Ниш</div></div>
-      <div class="stat-card"><div class="num" style="color:var(--green)">${statusCount.client||0}</div><div class="label">Клиенты</div></div>
-      <div class="stat-card"><div class="num" style="color:#8b5cf6">${statusCount.dialog||0}</div><div class="label">В диалоге</div></div>
-    </div>
-
-    <div class="lead-filters">
-      <input class="search-input" placeholder="🔍 Поиск по названию..." value="${parsSearch}" oninput="parsSearch=this.value;parsShowCount=100;render()">
-
-      <div class="filter-chips">
-        ${statusChips.map(c=>`<button class="filter-chip ${parsStatusFilter===c.key?'active':''}" onclick="parsStatusFilter='${c.key}';parsShowCount=100;render()">${c.label} (${c.count})</button>`).join('')}
-      </div>
-
-      <div style="margin-top:8px;margin-bottom:4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Города</div>
-      <div class="filter-chips">
-        ${topCities.map(([c,n])=>`<button class="filter-chip ${parsFilterCities.has(c)?'active':''}" onclick="parsFilterCities.has('${c.replace(/'/g,"\\'")}')? parsFilterCities.delete('${c.replace(/'/g,"\\'")}'):parsFilterCities.add('${c.replace(/'/g,"\\'")}');parsShowCount=100;render()">📍 ${c} (${n})</button>`).join('')}
-      </div>
-
-      <div style="margin-top:8px;margin-bottom:4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Ниши</div>
-      <div class="filter-chips">
-        ${topNiches.map(([ni,n])=>`<button class="filter-chip ${parsFilterNiches.has(ni)?'active':''}" onclick="parsFilterNiches.has('${ni.replace(/'/g,"\\'")}')? parsFilterNiches.delete('${ni.replace(/'/g,"\\'")}'):parsFilterNiches.add('${ni.replace(/'/g,"\\'")}');parsShowCount=100;render()">${PARS_NICHE_ICONS[ni]||'📁'} ${ni} (${n})</button>`).join('')}
-      </div>
-    </div>
-
-    <div style="font-size:13px;color:var(--text2);margin:12px 0 8px">Найдено: <b>${filtered.length.toLocaleString('ru-RU')}</b> · Показано: <b>${shown.length}</b></div>
-
-    <div class="leads-grid">
-    ${shown.map((l,i)=>{
-      const idx = leads.indexOf(l);
-      const waNum = l.w ? l.w.replace(/[^0-9]/g,'') : (l.p ? l.p.replace(/[^0-9]/g,'') : '');
-      const ni = PARS_NICHE_ICONS[l.ni]||'📁';
-      return `<div class="lead-card" onclick="openLeadCRM(${idx})">
-        <div class="lead-top">
-          <span class="lead-name">${statusIcon(l)} ${l.n}</span>
+  // ===== BASE TAB =====
+  if(parsSubTab === 'base'){
+    let filtered = leads;
+    if(parsStatusFilter!=='all') filtered = filtered.filter(l=>{ const k=l.p||l.n; return (crm[k]?.status||'new')===parsStatusFilter; });
+    if(parsFilterCities.size) filtered = filtered.filter(l=>parsFilterCities.has(l.c));
+    if(parsFilterNiches.size) filtered = filtered.filter(l=>parsFilterNiches.has(l.ni));
+    if(parsSearch) filtered = filtered.filter(l=>l.n.toLowerCase().includes(parsSearch.toLowerCase()));
+    const shown = filtered.slice(0, parsShowCount);
+    const statusIcon = (l)=>{ const key=l.p||l.n; const s=crm[key]?.status||'new'; return PARS_STATUSES.find(x=>x.id===s)?.icon||'🆕'; };
+    const statusChips = [
+      {key:'all',label:'Все',count:statusCount.all},
+      {key:'new',label:'🆕 Новые',count:statusCount.new},
+      {key:'sent',label:'📤 Отправлено',count:statusCount.sent},
+      {key:'dialog',label:'💬 В диалоге',count:statusCount.dialog},
+      {key:'client',label:'✅ Клиенты',count:statusCount.client},
+      {key:'refused',label:'❌ Отказ',count:statusCount.refused}
+    ];
+    contentHtml = `
+      <div class="lead-filters">
+        <input class="search-input" placeholder="🔍 Поиск по названию..." value="${parsSearch}" oninput="parsSearch=this.value;parsShowCount=100;render()">
+        <div class="filter-chips">
+          ${statusChips.map(c=>'<button class="filter-chip '+(parsStatusFilter===c.key?'active':'')+'" onclick="parsStatusFilter=\''+c.key+'\';parsShowCount=100;render()">'+c.label+' ('+c.count+')</button>').join('')}
         </div>
-        <div class="lead-info">📍 ${l.c} · ${ni} ${l.ni}</div>
-        ${l.a?`<div class="lead-info" style="font-size:11px">${l.a}</div>`:''}
-        <div class="lead-actions">
-          ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" onclick="event.stopPropagation()" class="btn btn-ghost" style="font-size:12px;padding:4px 8px">💬 WhatsApp</a>`:''}
-          ${l.ig?`<a href="https://instagram.com/${l.ig.replace('@','')}" target="_blank" onclick="event.stopPropagation()" class="btn btn-ghost" style="font-size:12px;padding:4px 8px">📸 ${l.ig}</a>`:''}
-          ${l.p?`<a href="tel:${l.p}" onclick="event.stopPropagation()" class="btn btn-ghost" style="font-size:12px;padding:4px 8px">📞 ${l.p}</a>`:''}
+        <div style="margin-top:8px;margin-bottom:4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Города</div>
+        <div class="filter-chips">
+          ${topCities.map(([c,n])=>'<button class="filter-chip '+(parsFilterCities.has(c)?'active':'')+'" onclick="parsFilterCities.has(\''+c.replace("'","\\'")+'\')?parsFilterCities.delete(\''+c.replace("'","\\'")+'\'): parsFilterCities.add(\''+c.replace("'","\\'")+'\'  );parsShowCount=100;render()">📍 '+c+' ('+n+')</button>').join('')}
         </div>
-      </div>`;
-    }).join('')}
-    </div>
+        <div style="margin-top:8px;margin-bottom:4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Ниши</div>
+        <div class="filter-chips">
+          ${topNiches.map(([ni,n])=>'<button class="filter-chip '+(parsFilterNiches.has(ni)?'active':'')+'" onclick="parsFilterNiches.has(\''+ni.replace("'","\\'")+'\')?parsFilterNiches.delete(\''+ni.replace("'","\\'")+'\'): parsFilterNiches.add(\''+ni.replace("'","\\'")+'\'  );parsShowCount=100;render()">'+(PARS_NICHE_ICONS[ni]||'📁')+' '+ni+' ('+n+')</button>').join('')}
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin:12px 0 8px">Найдено: <b>${filtered.length.toLocaleString('ru-RU')}</b> · Показано: <b>${shown.length}</b></div>
+      <div class="leads-grid">
+      ${shown.map((l,i)=>{
+        const idx = leads.indexOf(l);
+        const waNum = l.w ? l.w.replace(/[^0-9]/g,'') : (l.p ? l.p.replace(/[^0-9]/g,'') : '');
+        const ni = PARS_NICHE_ICONS[l.ni]||'📁';
+        return '<div class="lead-card" onclick="openLeadCRM('+idx+')"><div class="lead-top"><span class="lead-name">'+statusIcon(l)+' '+l.n+'</span></div><div class="lead-info">📍 '+l.c+' · '+ni+' '+l.ni+'</div>'+(l.a?'<div class="lead-info" style="font-size:11px">'+l.a+'</div>':'')+'<div class="lead-actions">'+(waNum?'<a href="https://wa.me/'+waNum+'" target="_blank" onclick="event.stopPropagation()" class="btn btn-ghost" style="font-size:12px;padding:4px 8px">💬 WA</a>':'')+(l.ig?'<a href="https://instagram.com/'+l.ig.replace('@','')+'" target="_blank" onclick="event.stopPropagation()" class="btn btn-ghost" style="font-size:12px;padding:4px 8px">📸</a>':'')+(l.p?'<a href="tel:'+l.p+'" onclick="event.stopPropagation()" class="btn btn-ghost" style="font-size:12px;padding:4px 8px">📞</a>':'')+'</div></div>';
+      }).join('')}
+      </div>
+      ${filtered.length > parsShowCount ? '<button onclick="parsShowCount+=100;render()" class="btn btn-primary" style="width:100%;margin-bottom:16px">Показать ещё (+'+(Math.min(100,filtered.length-parsShowCount))+')</button>' : ''}
+    `;
+  }
 
-    ${filtered.length > parsShowCount ? `<button onclick="parsShowCount+=100;render()" class="btn btn-primary" style="width:100%;margin-bottom:16px">Показать ещё (+${Math.min(100,filtered.length-parsShowCount)})</button>` : ''}
+  // ===== MAILING TAB =====
+  if(parsSubTab === 'mailing'){
+    const tplCards = PARS_WA_TEMPLATES.map((t,i)=>{
+      const preview = t.text.replace(/{name}/g,'Компания').replace(/{city}/g,'Алматы').replace(/{niche}/g,'Рестораны').replace(/\n/g,'<br>');
+      return '<div class="finance-card"><h4 style="font-size:14px">'+t.name+'</h4><div style="font-size:12px;color:var(--text2);line-height:1.7;margin:10px 0;padding:12px;background:var(--surface);border-radius:var(--radius);border-left:3px solid var(--primary)">'+preview+'</div><div style="font-size:11px;color:var(--text3)">Плейсхолдеры: {name}, {city}, {niche}</div></div>';
+    }).join('');
 
-    <div style="background:var(--card-bg);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow);margin-top:16px">
-      <h3 style="margin-bottom:12px">📲 Настройка рассылки</h3>
-      <div style="margin-bottom:12px">
-        <label style="font-size:12px;color:var(--text2);font-weight:600">Шаблон сообщения:</label>
-        <textarea id="parsTpl" rows="3" style="width:100%;margin-top:4px;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px;resize:vertical" oninput="parsMsgTemplate=this.value;localStorage.setItem('pabliki_pars_tpl',this.value)">${parsMsgTemplate}</textarea>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">Плейсхолдеры: {name}, {city}, {niche}</div>
+    contentHtml = `
+      <div class="finance-card" style="border-left:3px solid var(--green)">
+        <h4 style="color:var(--green);margin-bottom:8px">🎯 Воронка 7 касаний</h4>
+        <div style="font-size:12px;color:var(--text2);line-height:2">
+          <div>1️⃣ <b>Знакомство</b> → представиться, дать ценность, задать вопрос</div>
+          <div>2️⃣ <b>Подборка</b> → через 1-2 дня, персональный медиаплан PDF</div>
+          <div>3️⃣ <b>Кейс</b> → через 2-3 дня, соцдоказательство</div>
+          <div>4️⃣ <b>Спецпредложение</b> → через 3-5 дней, дедлайн</div>
+          <div>5️⃣ <b>Follow-up</b> → через 5-7 дней, мягкое напоминание</div>
+          <div>6️⃣ <b>Реактивация</b> → через 14 дней, новый оффер</div>
+          <div>7️⃣ <b>Финальное</b> → через 30 дней, дверь открыта</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">⏰ Пауза 1-3 дня между касаниями. Лимит: ${parsLimit} контактов/день.</div>
       </div>
-      <div style="margin-bottom:12px">
-        <label style="font-size:12px;color:var(--text2);font-weight:600">Интервал: <b>${parsInterval}</b> мин</label>
-        <input type="range" min="15" max="60" value="${parsInterval}" oninput="parsInterval=+this.value;localStorage.setItem('pabliki_pars_interval',this.value);this.previousElementSibling.querySelector('b').textContent=this.value" style="width:100%;margin-top:4px">
+      <h3 style="margin:16px 0 12px;font-size:16px;font-weight:800">📝 Шаблоны сообщений</h3>
+      ${tplCards}
+      <div class="finance-card" style="margin-top:16px">
+        <h4>⚙️ Настройки рассылки</h4>
+        <div style="margin:12px 0">
+          <label style="font-size:12px;color:var(--text2);font-weight:600">Свой шаблон:</label>
+          <textarea id="parsTpl" rows="3" style="width:100%;margin-top:4px;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px;resize:vertical" oninput="parsMsgTemplate=this.value;localStorage.setItem('pabliki_pars_tpl',this.value)">${parsMsgTemplate}</textarea>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Плейсхолдеры: {name}, {city}, {niche}</div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;color:var(--text2);font-weight:600">Интервал: <b>${parsInterval}</b> мин</label>
+          <input type="range" min="15" max="60" value="${parsInterval}" oninput="parsInterval=+this.value;localStorage.setItem('pabliki_pars_interval',this.value);this.previousElementSibling.querySelector('b').textContent=this.value" style="width:100%;margin-top:4px">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;color:var(--text2);font-weight:600">Лимит в день: <b>${parsLimit}</b> контактов</label>
+          <input type="range" min="5" max="30" value="${parsLimit}" oninput="parsLimit=+this.value;localStorage.setItem('pabliki_pars_limit',this.value);this.previousElementSibling.querySelector('b').textContent=this.value" style="width:100%;margin-top:4px">
+        </div>
+        <button onclick="launchParsMailer()" class="btn btn-primary" style="width:100%;background:var(--green);font-size:14px">🚀 Запустить рассылку</button>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">⚠️ Рассылка через Викторию в Telegram. Отфильтруйте лидов → запускайте.</div>
       </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;color:var(--text2);font-weight:600">Лимит в день: <b>${parsLimit}</b></label>
-        <input type="range" min="5" max="30" value="${parsLimit}" oninput="parsLimit=+this.value;localStorage.setItem('pabliki_pars_limit',this.value);this.previousElementSibling.querySelector('b').textContent=this.value" style="width:100%;margin-top:4px">
+      <div class="finance-card" style="border-left:3px solid var(--red);margin-top:16px">
+        <h4 style="color:var(--red)">🚫 Красные линии</h4>
+        <div style="font-size:12px;color:var(--text2);line-height:2">
+          <div>• Минимум 1 день между касаниями одному лиду</div>
+          <div>• Максимум 15-20 контактов в день</div>
+          <div>• Если «нет» 2 раза → архив</div>
+          <div>• VIP-клиенты → только через Рами</div>
+          <div>• Себестоимость клиенту не показываем</div>
+        </div>
       </div>
-      <button onclick="launchParsMailer()" class="btn btn-primary" style="width:100%;background:var(--green);font-size:14px">🚀 Запустить рассылку</button>
-    </div>
-  `;
-  app.innerHTML = html;
+    `;
+  }
+
+  // ===== CRM TAB =====
+  if(parsSubTab === 'crm'){
+    const allEntries = Object.entries(crm);
+    const withTouches = allEntries.filter(([k,v])=>v.touches?.length).sort((a,b)=>{
+      const la=a[1].touches[a[1].touches.length-1]?.date||'';
+      const lb=b[1].touches[b[1].touches.length-1]?.date||'';
+      return lb.localeCompare(la);
+    }).slice(0,50);
+    const byStatus = {};
+    PARS_STATUSES.forEach(s=>byStatus[s.id]=0);
+    allEntries.forEach(([k,v])=>byStatus[v.status]=(byStatus[v.status]||0)+1);
+    const total = leads.length;
+    const contacted = statusCount.sent + statusCount.dialog + statusCount.client + statusCount.refused;
+    const inDialog = statusCount.dialog + statusCount.client;
+    const clients = statusCount.client;
+    const convRate = contacted ? Math.round(clients/contacted*100) : 0;
+
+    contentHtml = `
+      <div class="finance-card">
+        <h4>📈 Воронка конверсии</h4>
+        <div style="margin-top:12px">
+          ${[
+            {label:'Всего в базе', value:total, color:'var(--primary)', pct:100},
+            {label:'Контактировали', value:contacted, color:'var(--peach)', pct:Math.round(contacted/total*100)},
+            {label:'В диалоге / клиенты', value:inDialog, color:'#8b5cf6', pct:contacted?Math.round(inDialog/contacted*100):0},
+            {label:'Стали клиентами', value:clients, color:'var(--green)', pct:convRate}
+          ].map(f=>'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>'+f.label+'</span><span style="font-weight:700;color:'+f.color+'">'+f.value.toLocaleString('ru-RU')+' ('+f.pct+'%)</span></div><div style="height:8px;background:var(--surface);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+f.pct+'%;background:'+f.color+';border-radius:4px;transition:width .5s"></div></div></div>').join('')}
+        </div>
+      </div>
+      <div class="finance-card">
+        <h4>📊 По статусам</h4>
+        ${PARS_STATUSES.map(s=>'<div class="finance-row"><span class="label">'+s.icon+' '+s.label+'</span><span class="value">'+(byStatus[s.id]||0).toLocaleString('ru-RU')+'</span></div>').join('')}
+      </div>
+      <div class="finance-card">
+        <h4>🕐 Последние касания</h4>
+        ${withTouches.length ? withTouches.map(([key,data])=>{
+          const lastTouch = data.touches[data.touches.length-1];
+          const st = PARS_STATUSES.find(s=>s.id===data.status);
+          return '<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:var(--text)">'+key+'</b><span style="font-size:11px">'+(st?.icon||'')+' '+(st?.label||'')+'</span></div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+(lastTouch?.date||'')+' — '+(lastTouch?.note||'')+'</div><div style="font-size:10px;color:var(--text3)">Всего касаний: '+data.touches.length+'</div></div>';
+        }).join('') : '<div style="color:var(--text3);font-size:13px;padding:12px 0">Пока нет касаний. Начните рассылку!</div>'}
+      </div>
+    `;
+  }
+
+  app.innerHTML = '<div class="header"><h1>🔍 ПАРСИНГ 2GIS</h1><p>'+leads.length.toLocaleString('ru-RU')+' лидов из 12 городов</p></div><div class="stats-bar"><div class="stat-card"><div class="num" style="color:var(--primary)">'+topCities.length+'</div><div class="label">Городов</div></div><div class="stat-card"><div class="num" style="color:var(--accent)">'+topNiches.length+'</div><div class="label">Ниш</div></div><div class="stat-card"><div class="num" style="color:var(--green)">'+(statusCount.client||0)+'</div><div class="label">Клиенты</div></div><div class="stat-card"><div class="num" style="color:#8b5cf6">'+(statusCount.dialog||0)+'</div><div class="label">Диалог</div></div></div>'+subTabsHtml+contentHtml;
 }
-
 function launchParsMailer(){
   const cmd = '/mailing template='+encodeURIComponent(parsMsgTemplate)+' interval='+parsInterval+' limit='+parsLimit;
   window.open('tg://resolve?domain=viktoriya_shtat_bot&text='+encodeURIComponent(cmd));
