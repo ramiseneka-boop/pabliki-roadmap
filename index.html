@@ -1354,7 +1354,7 @@ function renderSelection(app){
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
         <td style="font-size:10.5px">${p.c}</td>
-        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
+        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a>${p.custom?'<span onclick="deletePablik(\''+p.ig+'\')" style="cursor:pointer;margin-left:4px;font-size:10px;color:var(--red);opacity:0.6">✕</span>':''}</td>
         <td style="font-size:10px">${ci[p.t]||''}</td>
         <td class="num">${fmt(p.s)}</td>
         <td class="num">${fmt(p.p)}₸</td>
@@ -1371,7 +1371,7 @@ function renderSelection(app){
       return `<tr>
         <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
         <td style="font-size:10.5px">${p.c}</td>
-        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a></td>
+        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a>${p.custom?'<span onclick="deletePablik(\''+p.ig+'\')" style="cursor:pointer;margin-left:4px;font-size:10px;color:var(--red);opacity:0.6">✕</span>':''}</td>
         <td style="font-size:10px">${ci[p.t]||''}</td>
         <td class="num">${fmt(p.s)}</td>
         <td class="num">${fmt(p.co)}₸${zeroCostIcon}</td>
@@ -1389,6 +1389,7 @@ function renderSelection(app){
       <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki">
       <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki">
       <p>Создай медиаплан из ${PABLIKI_DB.length} пабликов</p>
+      <button class="btn btn-ghost" onclick="showAddPablikModal()" style="margin-top:10px;font-size:12px;padding:8px 16px">➕ Добавить паблик</button>
     </div>
     
     <div class="mode-toggle">
@@ -1487,6 +1488,98 @@ function renderCityChips(){
   ].join('');
 }
 
+// ===================== CUSTOM PABLIKI =====================
+function getCustomPabliki(){
+  try { return JSON.parse(localStorage.getItem('pabliki_custom') || '[]'); } catch(e){ return []; }
+}
+function saveCustomPabliki(list){
+  localStorage.setItem('pabliki_custom', JSON.stringify(list));
+}
+function loadCustomPabliki(){
+  const custom = getCustomPabliki();
+  // Remove previously added customs from PABLIKI_DB to avoid dupes on reload
+  custom.forEach(cp => {
+    if(!PABLIKI_DB.find(p => p.ig === cp.ig)){
+      PABLIKI_DB.push(cp);
+    }
+  });
+  // Update cities & cats
+  const newCities = [...new Set(PABLIKI_DB.map(p=>p.c))].filter(c => !PABLIKI_CITIES.includes(c));
+  newCities.forEach(c => PABLIKI_CITIES.push(c));
+  const newCats = [...new Set(PABLIKI_DB.map(p=>p.t))].filter(c => !PABLIKI_CATS.includes(c));
+  newCats.forEach(c => PABLIKI_CATS.push(c));
+}
+loadCustomPabliki();
+
+function showAddPablikModal(){
+  const cats = ['Новостные','Вакансии','Мамочки','Авто/Недвижимость','Еда/Досуг','Городские','Реклама/Торговля','Общие'];
+  const catOpts = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('modalContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text)">➕ Добавить паблик</h3>
+    <div class="add-form show">
+      <input id="ap_ig" placeholder="Instagram (без @)" style="text-transform:lowercase">
+      <input id="ap_city" placeholder="Город" list="cityList">
+      <datalist id="cityList">${PABLIKI_CITIES.map(c=>`<option value="${c}">`).join('')}</datalist>
+      <select id="ap_cat">${catOpts}</select>
+      <input id="ap_subs" type="number" placeholder="Подписчики">
+      <input id="ap_cost" type="number" placeholder="Себестоимость (₸)">
+      <input id="ap_price" type="number" placeholder="Цена клиенту (₸)">
+      <input id="ap_link" placeholder="Ссылка Instagram (необязательно)">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary" onclick="addPablik()" style="flex:1">Добавить</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('modalOverlay').classList.remove('show')" style="flex:1">Отмена</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function addPablik(){
+  const ig = document.getElementById('ap_ig').value.trim().replace('@','').toLowerCase();
+  const city = document.getElementById('ap_city').value.trim();
+  const cat = document.getElementById('ap_cat').value;
+  const subs = parseInt(document.getElementById('ap_subs').value) || 0;
+  const cost = parseInt(document.getElementById('ap_cost').value) || 0;
+  const price = parseInt(document.getElementById('ap_price').value) || 0;
+  const link = document.getElementById('ap_link').value.trim() || ('https://instagram.com/'+ig);
+  
+  if(!ig){showToast('Введите Instagram');return;}
+  if(!city){showToast('Введите город');return;}
+  if(subs <= 0){showToast('Введите подписчиков');return;}
+  if(price <= 0){showToast('Введите цену');return;}
+  
+  if(PABLIKI_DB.find(p => p.ig === ig)){
+    showToast('⚠️ Паблик @'+ig+' уже в базе');return;
+  }
+  
+  const newP = {c:city, ig:ig, s:subs, co:cost, p:price, l:link, t:cat, custom:true};
+  PABLIKI_DB.push(newP);
+  
+  // Save to localStorage
+  const custom = getCustomPabliki();
+  custom.push(newP);
+  saveCustomPabliki(custom);
+  
+  // Update cities/cats if new
+  if(!PABLIKI_CITIES.includes(city)) PABLIKI_CITIES.push(city);
+  if(!PABLIKI_CATS.includes(cat)) PABLIKI_CATS.push(cat);
+  
+  document.getElementById('modalOverlay').classList.remove('show');
+  showToast('✅ @'+ig+' добавлен!');
+  render();
+}
+
+function deletePablik(ig){
+  if(!confirm('Удалить @'+ig+' из базы?')) return;
+  const idx = PABLIKI_DB.findIndex(p => p.ig === ig);
+  if(idx >= 0) PABLIKI_DB.splice(idx, 1);
+  selSelected.delete(ig);
+  const custom = getCustomPabliki().filter(p => p.ig !== ig);
+  saveCustomPabliki(custom);
+  showToast('🗑 @'+ig+' удалён');
+  render();
+}
+
 function autoSelectByBudget(){
   if(selBudget >= 10000000) return; // unlimited
   selSelected.clear();
@@ -1547,6 +1640,9 @@ function exportSelPDF(){
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Montserrat',sans-serif;color:#1f2937;background:#fff}
+    .back-btn{position:fixed;top:16px;left:16px;z-index:100;padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+    .back-btn:active{transform:scale(0.95)}
+    @media print{.back-btn{display:none}}
     .page{max-width:800px;margin:0 auto;padding:40px}
     .header{text-align:center;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #2563eb}
     .logo{font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px}
@@ -1596,12 +1692,13 @@ function exportSelPDF(){
       pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>
       +7 777 151 6166 · WhatsApp
     </div>
-  </div></body></html>`;
+  </div>
+  <button class="back-btn" onclick="window.close();history.back()">← Назад</button>
+  </body></html>`;
   
   const w = window.open('','_blank');
   w.document.write(html);
   w.document.close();
-  setTimeout(() => w.print(), 500);
 }
 
 function shareSel(){
