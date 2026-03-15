@@ -2525,6 +2525,7 @@ let selShowCount = 100;
 })();
 
 function saveSelection(){
+  // Save filters to localStorage (legacy)
   localStorage.setItem('pabliki_selection', JSON.stringify({
     selCities: [...selCities],
     selCats: [...selCats],
@@ -2534,7 +2535,109 @@ function saveSelection(){
     selBudget,
     selSelected: [...selSelected]
   }));
+
+  const allSelected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
+  if(!allSelected.length){showToast('Выберите паблики');return;}
+  const totalPrice = allSelected.reduce((s,p) => s + p.p, 0);
+  const totalSubs = allSelected.reduce((s,p) => s + p.s, 0);
+  const cities = [...new Set(allSelected.map(p=>p.c))];
+  const fmt = n => n.toLocaleString('ru-RU');
+  let cityLabel;
+  if(cities.length<=3) cityLabel=cities.join(', ');
+  else cityLabel=cities[0]+' +'+(cities.length-1)+' город'+(cities.length-1>4?'ов':cities.length-1>1?'а':'');
+  const autoName = cityLabel+' — '+allSelected.length+' пабликов — '+fmt(totalPrice)+'₸';
+
+  document.getElementById('modalContent').innerHTML = `
+    <h3 style="margin:0 0 12px;font-size:16px">💾 Сохранить подборку</h3>
+    <input type="text" id="savedSelName" value="${autoName}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;box-sizing:border-box;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">${allSelected.length} пабликов · ${fmt(totalSubs)} подп. · ${fmt(totalPrice)}₸</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="confirmSaveSelection()" style="flex:1">💾 Сохранить</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modalOverlay').classList.remove('show')" style="flex:1">Отмена</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function confirmSaveSelection(){
+  const name = document.getElementById('savedSelName').value.trim() || 'Подборка';
+  const allSelected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
+  const totalPrice = allSelected.reduce((s,p) => s + p.p, 0);
+  const totalSubs = allSelected.reduce((s,p) => s + p.s, 0);
+  const cities = [...new Set(allSelected.map(p=>p.c))];
+  const entry = {
+    id: 'sel_'+Date.now(),
+    name,
+    date: new Date().toISOString().slice(0,10),
+    mode: selMode,
+    pabliki: [...selSelected],
+    cities,
+    totalPrice,
+    totalSubs,
+    count: allSelected.length
+  };
+  const saved = JSON.parse(localStorage.getItem('pabliki_saved_selections')||'[]');
+  saved.unshift(entry);
+  localStorage.setItem('pabliki_saved_selections', JSON.stringify(saved));
+  document.getElementById('modalOverlay').classList.remove('show');
   showToast('💾 Подборка сохранена');
+  render();
+}
+
+function getSavedSelections(){
+  return JSON.parse(localStorage.getItem('pabliki_saved_selections')||'[]');
+}
+
+function loadSavedSelection(id){
+  const saved = getSavedSelections();
+  const sel = saved.find(s=>s.id===id);
+  if(!sel) return;
+  selSelected = new Set(sel.pabliki);
+  selMode = sel.mode || 'client';
+  render();
+  showToast('📋 Подборка загружена');
+}
+
+function deleteSavedSelection(id){
+  let saved = getSavedSelections();
+  saved = saved.filter(s=>s.id!==id);
+  localStorage.setItem('pabliki_saved_selections', JSON.stringify(saved));
+  render();
+  showToast('🗑 Подборка удалена');
+}
+
+function shareFromSaved(id){
+  const saved = getSavedSelections();
+  const sel = saved.find(s=>s.id===id);
+  if(!sel) return;
+  selSelected = new Set(sel.pabliki);
+  selMode = sel.mode || 'client';
+  render();
+  setTimeout(()=>shareSel(), 100);
+}
+
+function renderSavedSelectionsBlock(){
+  const saved = getSavedSelections();
+  if(!saved.length) return '';
+  const fmt = n => n.toLocaleString('ru-RU');
+  const cards = saved.map(s => `
+    <div class="finance-card" style="margin-bottom:8px;padding:12px">
+      <div style="font-weight:600;font-size:14px;margin-bottom:4px">${s.name}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">${s.date} · ${s.count} пабликов · ${fmt(s.totalPrice)}₸ · ${fmt(s.totalSubs)} подп.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${s.cities.slice(0,5).map(c=>'<span class="city-chip" style="font-size:10px;padding:2px 8px;pointer-events:none">'+c+'</span>').join('')}${s.cities.length>5?'<span style="font-size:10px;color:var(--text2)">+' +(s.cities.length-5)+'</span>':''}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost" onclick="loadSavedSelection('${s.id}')" style="font-size:11px;padding:6px 10px;flex:1">📋 Загрузить</button>
+        <button class="btn btn-ghost" onclick="shareFromSaved('${s.id}')" style="font-size:11px;padding:6px 10px;flex:1">📤 Отправить</button>
+        <button class="btn btn-ghost" onclick="deleteSavedSelection('${s.id}')" style="font-size:11px;padding:6px 10px;color:var(--red)">🗑</button>
+      </div>
+    </div>
+  `).join('');
+  return `
+    <details class="filter-section" style="margin-bottom:12px">
+      <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0">📁 Сохранённые подборки (${saved.length})</summary>
+      <div style="margin-top:8px">${cards}</div>
+    </details>
+  `;
 }
 
 function sortPabliki(list) {
@@ -2658,6 +2761,8 @@ function renderSelection(app){
       <p>Создай медиаплан из ${PABLIKI_DB.length} пабликов</p>
       <button class="btn btn-ghost" onclick="showAddPablikModal()" style="margin-top:10px;font-size:12px;padding:8px 16px">➕ Добавить паблик</button>
     </div>
+    
+    ${renderSavedSelectionsBlock()}
     
     <div class="mode-toggle">
       <div class="mode-btn ${selMode==='client'?'active':''}" onclick="selMode='client';render()">👤 Для клиента</div>
