@@ -12,7 +12,7 @@
 <script src="leads-data.js?v=19"></script>
 <!-- leads-2gis.js загружается лениво при открытии вкладки Клиенты → База 2GIS -->
 <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script async src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2875,117 +2875,70 @@ function selectAllFiltered(){
   render();
 }
 
-function _buildPdfHtml(mode){
+function _getPdfContent(){
   const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
   if(!selected.length) return null;
   const fmt = n => n.toLocaleString('ru-RU');
-  const totalSubs = selected.reduce((s,p) => s + p.s, 0);
-  const totalPrice = selected.reduce((s,p) => s + p.p, 0);
-  const isClient = selMode === 'client';
+  const totalSubs = selected.reduce((s,p)=>s+p.s,0);
+  const totalPrice = selected.reduce((s,p)=>s+p.p,0);
+  const totalCost = selected.reduce((s,p)=>s+p.co,0);
+  const totalMargin = totalPrice>0?Math.round((totalPrice-totalCost)/totalPrice*100):0;
+  const isClient = selMode==='client';
   const date = new Date().toLocaleDateString('ru-RU');
-  const totalCost = selected.reduce((s,p) => s + p.co, 0);
-  const totalMargin = totalPrice > 0 ? Math.round((totalPrice - totalCost) / totalPrice * 100) : 0;
-  const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
+  const ci={'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
   let rows = selected.map((p,i)=>{
     const margin=p.p>0?Math.round((p.p-p.co)/p.p*100):0;const mT=p.p-p.co;const mc=margin>=50?'#16a34a':margin>=30?'#ca8a04':'#dc2626';
-    return `<tr><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${i+1}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1f2937">${p.c}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#2563eb;font-weight:500">@${p.ig}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${ci[p.t]||''} ${p.t||''}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">${fmt(p.s)}</td>${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">${fmt(p.co)}₸</td>`:''}<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">${fmt(p.p)}₸</td>${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:${mc}">${fmt(mT)}₸</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;color:${mc}">${margin}%</td>`:''}</tr>`;
+    return '<tr><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">'+(i+1)+'</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1f2937">'+p.c+'</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#2563eb;font-weight:500">@'+p.ig+'</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">'+(ci[p.t]||'')+' '+(p.t||'')+'</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">'+fmt(p.s)+'</td>'+(!isClient?'<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">'+fmt(p.co)+'₸</td>':'')+'<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">'+fmt(p.p)+'₸</td>'+(!isClient?'<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:'+mc+'">'+fmt(mT)+'₸</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+mc+'">'+margin+'%</td>':'')+'</tr>';
   }).join('');
-  return `<div style="font-family:sans-serif;color:#1f2937;max-width:800px;margin:0 auto;padding:20px">
-    <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #2563eb">
-      <div style="font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px">PABLIKI.KZ</div>
-      <div style="font-size:13px;color:#6b7280;margin-top:4px">${isClient?'Городская реклама нового поколения — медиаплан':'Внутренний медиаплан (полная аналитика)'} от ${date}</div>
-    </div>
-    <div style="display:flex;justify-content:center;gap:32px;margin:20px 0">
-      <div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${selected.length}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">пабликов</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${fmt(totalSubs)}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">аудитория</div></div>
-      ${!isClient?`<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${fmt(totalCost)}₸</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">себестоимость</div></div>`:''}
-      <div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${fmt(totalPrice)}₸</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">${isClient?'стоимость':'продажа'}</div></div>
-      ${!isClient?`<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#16a34a">${totalMargin}%</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">маржа</div></div>`:''}
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-top:16px"><thead><tr>
-      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">№</th>
-      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Город</th>
-      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Instagram</th>
-      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Кат.</th>
-      <th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Подп.</th>
-      ${!isClient?'<th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Себест.</th>':''}
-      <th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Цена</th>
-      ${!isClient?'<th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Маржа</th><th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">%</th>':''}
-    </tr></thead><tbody>${rows}</tbody>
-    <tfoot><tr>
-      <td colspan="4" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
-      <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
-      ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalCost)}₸</td>`:''}
-      <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
-      ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${fmt(totalPrice-totalCost)}₸</td><td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${totalMargin}%</td>`:''}
-    </tr></tfoot></table>
-    <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af">
-      pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>+7 777 069 82 92 · WhatsApp
-    </div>
-  </div>`;
-}
-
-function _generatePdfBlob(callback){
-  const content = _buildPdfHtml();
-  if(!content){showToast('Выберите паблики');return;}
-  if(typeof html2pdf === 'undefined'){showToast('⏳ Библиотека загружается...');return;}
-  const container = document.createElement('div');
-  container.innerHTML = content;
-  container.style.position = 'fixed';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.background = '#fff';
-  document.body.appendChild(container);
-  const fname = `mediaplan-pabliki-${new Date().toISOString().slice(0,10)}.pdf`;
-  html2pdf().set({
-    margin: [10,5,10,5],
-    filename: fname,
-    image: {type:'jpeg',quality:0.95},
-    html2canvas: {scale:2,useCORS:true},
-    jsPDF: {unit:'mm',format:'a4',orientation:'portrait'}
-  }).from(container).outputPdf('blob').then(blob=>{
-    document.body.removeChild(container);
-    callback(blob, fname);
-  }).catch(e=>{
-    document.body.removeChild(container);
-    showToast('❌ Ошибка генерации PDF');
-    console.error(e);
-  });
+  return {selected,fmt,totalSubs,totalPrice,totalCost,totalMargin,isClient,date,rows,ci};
 }
 
 function exportSelPDF(){
-  const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
-  if(!selected.length){showToast('Выберите паблики');return;}
-  showToast('⏳ Генерация PDF...');
-  _generatePdfBlob((blob, fname)=>{
-    // Download PDF
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = fname;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ PDF скачан');
-  });
+  const d = _getPdfContent();
+  if(!d){showToast('Выберите паблики');return;}
+  const {selected,fmt,totalSubs,totalPrice,totalCost,totalMargin,isClient,date,rows}=d;
+  const logoB64 = window._logoDarkB64||'';
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1f2937;background:#fff}.btns{position:fixed;top:16px;left:16px;z-index:100;display:flex;gap:8px}.btns button{padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)}.btns button:nth-child(2){background:#8b5cf6}.btns button:nth-child(3){background:#16a34a}@media print{.btns{display:none}}.page{max-width:800px;margin:0 auto;padding:60px 20px 20px}table{width:100%;border-collapse:collapse}th{padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff}</style></head><body><div class="btns"><button onclick="history.back()">← Назад</button><button onclick="sharePdf()">📤 Поделиться</button><button onclick="window.print()">🖨 Печать</button></div><div class="page" id="pdfContent"><div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #2563eb">'+(logoB64?'<img src="data:image/png;base64,'+logoB64+'" style="height:40px">':'<div style="font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px">PABLIKI.KZ</div>')+'<div style="font-size:13px;color:#6b7280;margin-top:4px">'+(isClient?'Городская реклама нового поколения — медиаплан':'Внутренний медиаплан')+ ' от '+date+'</div></div><div style="display:flex;justify-content:center;gap:32px;margin:20px 0"><div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">'+selected.length+'</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">пабликов</div></div><div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">'+fmt(totalSubs)+'</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">аудитория</div></div><div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">'+fmt(totalPrice)+'₸</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">стоимость</div></div></div><table><thead><tr><th>№</th><th>Город</th><th>Instagram</th><th>Кат.</th><th style="text-align:right">Подп.</th>'+(!isClient?'<th style="text-align:right">Себест.</th>':'')+'<th style="text-align:right">Цена</th>'+(!isClient?'<th style="text-align:right">Маржа</th><th style="text-align:right">%</th>':'')+'</tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="4" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td><td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">'+fmt(totalSubs)+'</td>'+(!isClient?'<td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">'+fmt(totalCost)+'₸</td>':'')+'<td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">'+fmt(totalPrice)+'₸</td>'+(!isClient?'<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">'+fmt(totalPrice-totalCost)+'₸</td><td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">'+totalMargin+'%</td>':'')+'</tr></tfoot></table><div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af">pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>+7 777 069 82 92 · WhatsApp</div></div><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script><script>function sharePdf(){var el=document.getElementById("pdfContent");var fname="mediaplan-pabliki-"+new Date().toISOString().slice(0,10)+".pdf";if(typeof html2pdf==="undefined"){window.print();return;}html2pdf().set({margin:[10,5,10,5],filename:fname,image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}}).from(el).outputPdf("blob").then(function(blob){var file=new File([blob],fname,{type:"application/pdf"});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:"Медиаплан Pabliki.kz",files:[file]}).catch(function(){});}else{var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=fname;a.click();URL.revokeObjectURL(url);}}).catch(function(){window.print();});}<\/script></body></html>';
+  var w = window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else showToast('Разрешите всплывающие окна');
 }
 
 function shareSel(){
-  const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
-  if(!selected.length){showToast('Выберите паблики');return;}
-  showToast('⏳ Генерация PDF для отправки...');
-  _generatePdfBlob((blob, fname)=>{
-    const file = new File([blob], fname, {type:'application/pdf'});
-    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({title:'Медиаплан Pabliki.kz', files:[file]}).catch(()=>{});
-    } else {
-      // Fallback: download
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = fname;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('📥 PDF скачан (поделиться не поддерживается)');
-    }
-  });
+  const d = _getPdfContent();
+  if(!d){showToast('Выберите паблики');return;}
+  const {selected,fmt,totalSubs,totalPrice,isClient,date}=d;
+  // Build content div for html2pdf
+  const contentHtml = document.querySelector('.sel-sticky') ? null : null;
+  // Use html2pdf if available
+  if(typeof html2pdf !== 'undefined'){
+    showToast('⏳ Генерация PDF...');
+    const container = document.createElement('div');
+    container.innerHTML = '<div style="font-family:sans-serif;color:#1f2937;padding:20px"><div style="text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #2563eb"><div style="font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px">PABLIKI.KZ</div><div style="font-size:13px;color:#6b7280;margin-top:4px">'+(isClient?'Медиаплан':'Внутренний медиаплан')+' от '+date+'</div></div><div style="display:flex;justify-content:center;gap:32px;margin:16px 0"><div style="text-align:center"><div style="font-size:22px;font-weight:800;color:#2563eb">'+selected.length+'</div><div style="font-size:10px;color:#6b7280">ПАБЛИКОВ</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:800;color:#2563eb">'+fmt(totalSubs)+'</div><div style="font-size:10px;color:#6b7280">АУДИТОРИЯ</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:800;color:#2563eb">'+fmt(totalPrice)+'₸</div><div style="font-size:10px;color:#6b7280">СТОИМОСТЬ</div></div></div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="padding:8px;text-align:left;font-size:10px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">№</th><th style="padding:8px;text-align:left;font-size:10px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Город</th><th style="padding:8px;text-align:left;font-size:10px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Instagram</th><th style="padding:8px;text-align:right;font-size:10px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Подп.</th><th style="padding:8px;text-align:right;font-size:10px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Цена</th></tr></thead><tbody>'+selected.map((p,i)=>'<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">'+(i+1)+'</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">'+p.c+'</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;color:#2563eb">@'+p.ig+'</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right">'+fmt(p.s)+'</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">'+fmt(p.p)+'₸</td></tr>').join('')+'</tbody><tfoot><tr><td colspan="3" style="padding:10px 8px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td><td style="padding:10px 8px;text-align:right;font-weight:700;border-top:2px solid #2563eb">'+fmt(totalSubs)+'</td><td style="padding:10px 8px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb">'+fmt(totalPrice)+'₸</td></tr></tfoot></table><div style="text-align:center;margin-top:20px;font-size:11px;color:#9ca3af">pabliki.kz · +7 777 069 82 92 · WhatsApp</div></div>';
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;width:800px';
+    document.body.appendChild(container);
+    const fname = 'mediaplan-pabliki-'+new Date().toISOString().slice(0,10)+'.pdf';
+    html2pdf().set({margin:[10,5,10,5],filename:fname,image:{type:'jpeg',quality:0.95},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(container).outputPdf('blob').then(function(blob){
+      document.body.removeChild(container);
+      var file = new File([blob], fname, {type:'application/pdf'});
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({title:'Медиаплан Pabliki.kz', files:[file]}).catch(function(){});
+      } else {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href=url; a.download=fname; a.click();
+        URL.revokeObjectURL(url);
+        showToast('📥 PDF скачан');
+      }
+    }).catch(function(e){
+      document.body.removeChild(container);
+      console.error(e);
+      showToast('❌ Ошибка, открываю для печати');
+      exportSelPDF();
+    });
+  } else {
+    // Fallback: open PDF view
+    exportSelPDF();
+  }
 }
 
 // ===================== INIT =====================
