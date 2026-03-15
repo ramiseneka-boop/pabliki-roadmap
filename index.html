@@ -12,6 +12,7 @@
 <script src="leads-data.js?v=19"></script>
 <!-- leads-2gis.js загружается лениво при открытии вкладки Клиенты → База 2GIS -->
 <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2874,137 +2875,117 @@ function selectAllFiltered(){
   render();
 }
 
-function exportSelPDF(){
+function _buildPdfHtml(mode){
   const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
-  if(!selected.length){showToast('Выберите паблики');return;}
-  
+  if(!selected.length) return null;
   const fmt = n => n.toLocaleString('ru-RU');
   const totalSubs = selected.reduce((s,p) => s + p.s, 0);
   const totalPrice = selected.reduce((s,p) => s + p.p, 0);
   const isClient = selMode === 'client';
   const date = new Date().toLocaleDateString('ru-RU');
-  
   const totalCost = selected.reduce((s,p) => s + p.co, 0);
   const totalMargin = totalPrice > 0 ? Math.round((totalPrice - totalCost) / totalPrice * 100) : 0;
-  const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
-  
-  let rows = selected.map((p,i) => {
-    const margin = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
-    const marginT = p.p - p.co;
-    const mColor = margin >= 50 ? '#16a34a' : margin >= 30 ? '#ca8a04' : '#dc2626';
-    return `<tr>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${i+1}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1f2937">${p.c}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#2563eb;font-weight:500">@${p.ig}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${catIcons[p.t]||''} ${p.t||''}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-variant-numeric:tabular-nums">${fmt(p.s)}</td>
-      ${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-variant-numeric:tabular-nums">${fmt(p.co)}₸</td>`:''}
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${fmt(p.p)}₸</td>
-      ${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:${mColor}">${fmt(marginT)}₸</td>`:''}
-      ${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;color:${mColor}">${margin}%</td>`:''}
-    </tr>`;
+  const ci = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
+  let rows = selected.map((p,i)=>{
+    const margin=p.p>0?Math.round((p.p-p.co)/p.p*100):0;const mT=p.p-p.co;const mc=margin>=50?'#16a34a':margin>=30?'#ca8a04':'#dc2626';
+    return `<tr><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${i+1}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1f2937">${p.c}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#2563eb;font-weight:500">@${p.ig}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${ci[p.t]||''} ${p.t||''}</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">${fmt(p.s)}</td>${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">${fmt(p.co)}₸</td>`:''}<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">${fmt(p.p)}₸</td>${!isClient?`<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:${mc}">${fmt(mT)}₸</td><td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;color:${mc}">${margin}%</td>`:''}</tr>`;
   }).join('');
-  
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Montserrat',sans-serif;color:#1f2937;background:#fff}
-    .back-btn,.share-btn,.print-btn{position:fixed;top:16px;z-index:100;padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-    .back-btn{left:16px}
-    .share-btn{left:130px;background:#8b5cf6}
-    .print-btn{left:280px;background:#16a34a}
-    .back-btn:active,.share-btn:active,.print-btn:active{transform:scale(0.95)}
-    @media print{.back-btn,.share-btn,.print-btn{display:none}}
-    .page{max-width:800px;margin:0 auto;padding:40px}
-    .header{text-align:center;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #2563eb}
-    .logo{font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px}
-    .subtitle{font-size:13px;color:#6b7280;margin-top:4px}
-    .stats{display:flex;justify-content:center;gap:32px;margin:24px 0}
-    .stat{text-align:center}
-    .stat .n{font-size:24px;font-weight:800;color:#2563eb}
-    .stat .l{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
-    table{width:100%;border-collapse:collapse;margin-top:16px}
-    th{padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff}
-    th:nth-child(5),th:nth-child(6){text-align:right}
-    .footer{text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af}
-    @media print{.page{padding:20px}}
-  </style></head><body>
-  <div class="page">
-    <div class="header">
-      <img src="data:image/png;base64,${window._logoDarkB64||''}" style="height:40px" onerror="this.outerHTML='<div style=\\'font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px\\'>PABLIKI.KZ</div>'">
-      <div class="subtitle">${isClient?'Городская реклама нового поколения — медиаплан':'Внутренний медиаплан (полная аналитика)'} от ${date}</div>
+  return `<div style="font-family:sans-serif;color:#1f2937;max-width:800px;margin:0 auto;padding:20px">
+    <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #2563eb">
+      <div style="font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px">PABLIKI.KZ</div>
+      <div style="font-size:13px;color:#6b7280;margin-top:4px">${isClient?'Городская реклама нового поколения — медиаплан':'Внутренний медиаплан (полная аналитика)'} от ${date}</div>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="n">${selected.length}</div><div class="l">пабликов</div></div>
-      <div class="stat"><div class="n">${fmt(totalSubs)}</div><div class="l">аудитория</div></div>
-      ${!isClient?`<div class="stat"><div class="n">${fmt(totalCost)}₸</div><div class="l">себестоимость</div></div>`:''}
-      <div class="stat"><div class="n">${fmt(totalPrice)}₸</div><div class="l">${isClient?'стоимость':'продажа'}</div></div>
-      ${!isClient?`<div class="stat"><div class="n" style="color:#16a34a">${fmt(totalPrice-totalCost)}₸</div><div class="l">маржа ₸</div></div>`:''}
-      ${!isClient?`<div class="stat"><div class="n" style="color:#16a34a">${totalMargin}%</div><div class="l">маржа %</div></div>`:''}
+    <div style="display:flex;justify-content:center;gap:32px;margin:20px 0">
+      <div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${selected.length}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">пабликов</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${fmt(totalSubs)}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">аудитория</div></div>
+      ${!isClient?`<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${fmt(totalCost)}₸</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">себестоимость</div></div>`:''}
+      <div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#2563eb">${fmt(totalPrice)}₸</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">${isClient?'стоимость':'продажа'}</div></div>
+      ${!isClient?`<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#16a34a">${totalMargin}%</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">маржа</div></div>`:''}
     </div>
-    <table>
-      <thead><tr>
-        <th>№</th><th>Город</th><th>Instagram</th><th>Категория</th><th style="text-align:right">Подписчики</th>
-        ${!isClient?'<th style="text-align:right">Себест.</th>':''}
-        <th style="text-align:right">Цена</th>
-        ${!isClient?'<th style="text-align:right">Маржа ₸</th>':''}
-        ${!isClient?'<th style="text-align:right">%</th>':''}
-      </tr></thead>
-      <tbody>${rows}</tbody>
-      <tfoot><tr>
-        <td colspan="4" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
-        <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
-        ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalCost)}₸</td>`:''}
-        <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
-        ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${fmt(totalPrice-totalCost)}₸</td>`:''}
-        ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${totalMargin}%</td>`:''}
-      </tr></tfoot>
-    </table>
-    <div class="footer">
-      pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>
-      +7 777 069 82 92 · WhatsApp
+    <table style="width:100%;border-collapse:collapse;margin-top:16px"><thead><tr>
+      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">№</th>
+      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Город</th>
+      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Instagram</th>
+      <th style="padding:10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Кат.</th>
+      <th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Подп.</th>
+      ${!isClient?'<th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Себест.</th>':''}
+      <th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Цена</th>
+      ${!isClient?'<th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">Маржа</th><th style="padding:10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#2563eb;border-bottom:2px solid #2563eb;background:#eff6ff">%</th>':''}
+    </tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr>
+      <td colspan="4" style="padding:12px 10px;font-weight:700;border-top:2px solid #2563eb">ИТОГО</td>
+      <td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalSubs)}</td>
+      ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:700;border-top:2px solid #2563eb">${fmt(totalCost)}₸</td>`:''}
+      <td style="padding:12px 10px;text-align:right;font-weight:800;color:#2563eb;border-top:2px solid #2563eb;font-size:15px">${fmt(totalPrice)}₸</td>
+      ${!isClient?`<td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${fmt(totalPrice-totalCost)}₸</td><td style="padding:12px 10px;text-align:right;font-weight:800;color:#16a34a;border-top:2px solid #2563eb">${totalMargin}%</td>`:''}
+    </tr></tfoot></table>
+    <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af">
+      pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>+7 777 069 82 92 · WhatsApp
     </div>
-  </div>
-  <button class="back-btn" onclick="window.close();history.back()">← Назад</button>
-  <button class="share-btn" onclick="if(navigator.share){navigator.share({title:'Медиаплан Pabliki.kz',url:location.href}).catch(()=>{})}else{navigator.clipboard.writeText(location.href).then(()=>alert('URL скопирован!'))}">📤 Поделиться</button>
-  <button class="print-btn" onclick="window.print()">🖨 Печать</button>
-  </body></html>`;
-  
-  const w = window.open('','_blank');
-  w.document.write(html);
-  w.document.close();
+  </div>`;
+}
+
+function _generatePdfBlob(callback){
+  const content = _buildPdfHtml();
+  if(!content){showToast('Выберите паблики');return;}
+  if(typeof html2pdf === 'undefined'){showToast('⏳ Библиотека загружается...');return;}
+  const container = document.createElement('div');
+  container.innerHTML = content;
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.background = '#fff';
+  document.body.appendChild(container);
+  const fname = `mediaplan-pabliki-${new Date().toISOString().slice(0,10)}.pdf`;
+  html2pdf().set({
+    margin: [10,5,10,5],
+    filename: fname,
+    image: {type:'jpeg',quality:0.95},
+    html2canvas: {scale:2,useCORS:true},
+    jsPDF: {unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(container).outputPdf('blob').then(blob=>{
+    document.body.removeChild(container);
+    callback(blob, fname);
+  }).catch(e=>{
+    document.body.removeChild(container);
+    showToast('❌ Ошибка генерации PDF');
+    console.error(e);
+  });
+}
+
+function exportSelPDF(){
+  const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
+  if(!selected.length){showToast('Выберите паблики');return;}
+  showToast('⏳ Генерация PDF...');
+  _generatePdfBlob((blob, fname)=>{
+    // Download PDF
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ PDF скачан');
+  });
 }
 
 function shareSel(){
   const selected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
   if(!selected.length){showToast('Выберите паблики');return;}
-  
-  // Generate PDF HTML in hidden iframe, print to PDF, share as file
-  const fmt = n => n.toLocaleString('ru-RU');
-  const totalSubs = selected.reduce((s,p) => s + p.s, 0);
-  const totalPrice = selected.reduce((s,p) => s + p.p, 0);
-  const date = new Date().toLocaleDateString('ru-RU');
-  const catIcons = {'Новостные':'📰','Вакансии':'💼','Мамочки':'👶','Авто/Недвижимость':'🚗','Еда/Досуг':'🍽️','Городские':'🏙️','Реклама/Торговля':'📢','Общие':'📱'};
-  
-  const rows = selected.map((p,i) => 
-    `${i+1}. @${p.ig} (${p.c}) ${catIcons[p.t]||''} — ${fmt(p.s)} подп. — ${fmt(p.p)}₸`
-  ).join('\n');
-  
-  const text = `📋 МЕДИАПЛАН PABLIKI.KZ\n${date}\n\n${selected.length} пабликов · ${fmt(totalSubs)} подписчиков\n\n${rows}\n\n💰 Итого: ${fmt(totalPrice)}₸\n\n🌐 pabliki.kz · +7 777 069 82 92`;
-  
-  if(navigator.share && navigator.canShare){
-    // Try sharing as file
-    const blob = new Blob([text], {type:'text/plain'});
-    const file = new File([blob], `mediaplan-pabliki-${new Date().toISOString().slice(0,10)}.txt`, {type:'text/plain'});
-    if(navigator.canShare({files:[file]})){
+  showToast('⏳ Генерация PDF для отправки...');
+  _generatePdfBlob((blob, fname)=>{
+    const file = new File([blob], fname, {type:'application/pdf'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share({title:'Медиаплан Pabliki.kz', files:[file]}).catch(()=>{});
     } else {
-      navigator.share({title:'Медиаплан Pabliki.kz', text}).catch(()=>{});
+      // Fallback: download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fname;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('📥 PDF скачан (поделиться не поддерживается)');
     }
-  } else {
-    navigator.clipboard.writeText(text).then(()=>showToast('📋 Скопировано!')).catch(()=>{});
-  }
+  });
 }
 
 // ===================== INIT =====================
