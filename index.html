@@ -2612,8 +2612,11 @@ function shareFromSaved(id){
   if(!sel) return;
   selSelected = new Set(sel.pabliki);
   selMode = sel.mode || 'client';
-  render();
-  setTimeout(()=>shareSel(), 100);
+  // Don't render — just share directly, then render after
+  setTimeout(function(){
+    shareSel();
+    render();
+  }, 50);
 }
 
 function previewSavedSelection(id){
