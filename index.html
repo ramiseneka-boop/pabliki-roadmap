@@ -2616,16 +2616,65 @@ function shareFromSaved(id){
   setTimeout(()=>shareSel(), 100);
 }
 
+function previewSavedSelection(id){
+  const saved = getSavedSelections();
+  const sel = saved.find(s=>s.id===id);
+  if(!sel) return;
+  const fmt = n => n.toLocaleString('ru-RU');
+  const pabliks = sel.pabliki.map(ig => PABLIKI_DB.find(p=>p.ig===ig)).filter(Boolean);
+  const rows = pabliks.map((p,i)=>`<tr>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)">${i+1}</td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px">${p.c}</td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--border)"><a href="https://instagram.com/${p.ig}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:12px">@${p.ig}</a></td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:right;font-size:12px">${fmt(p.s)}</td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:right;font-size:12px;font-weight:600">${fmt(p.p)}₸</td>
+  </tr>`).join('');
+  const missing = sel.pabliki.length - pabliks.length;
+  document.getElementById('modalContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">${sel.name}</h3>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${sel.date} · ${sel.count} пабликов · ${fmt(sel.totalPrice)}₸ · ${fmt(sel.totalSubs)} подп.</div>
+    <div style="max-height:50vh;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:6px 8px;text-align:left;font-size:9px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--border);background:var(--surface);position:sticky;top:0">№</th>
+          <th style="padding:6px 8px;text-align:left;font-size:9px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--border);background:var(--surface);position:sticky;top:0">Город</th>
+          <th style="padding:6px 8px;text-align:left;font-size:9px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--border);background:var(--surface);position:sticky;top:0">Instagram</th>
+          <th style="padding:6px 8px;text-align:right;font-size:9px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--border);background:var(--surface);position:sticky;top:0">Подп.</th>
+          <th style="padding:6px 8px;text-align:right;font-size:9px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--border);background:var(--surface);position:sticky;top:0">Цена</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${missing>0?'<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠️ '+missing+' пабликов не найдено в базе</div>':''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="loadSavedSelection('${sel.id}');document.getElementById('modalOverlay').classList.remove('show')" style="flex:1;font-size:12px">📋 Загрузить</button>
+      <button class="btn btn-ghost" onclick="editSavedSelection('${sel.id}')" style="flex:1;font-size:12px">✏️ Редактировать</button>
+      <button class="btn btn-ghost" onclick="shareFromSaved('${sel.id}');document.getElementById('modalOverlay').classList.remove('show')" style="flex:1;font-size:12px">📤 Отправить</button>
+    </div>
+    <button class="btn btn-ghost" onclick="document.getElementById('modalOverlay').classList.remove('show')" style="width:100%;margin-top:8px;font-size:12px">Закрыть</button>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function editSavedSelection(id){
+  document.getElementById('modalOverlay').classList.remove('show');
+  loadSavedSelection(id);
+  // Remove from saved so user can re-save with edits
+  let saved = getSavedSelections().filter(s=>s.id!==id);
+  localStorage.setItem('pabliki_saved_selections', JSON.stringify(saved));
+  showToast('✏️ Редактируйте подборку, затем сохраните');
+}
+
 function renderSavedSelectionsBlock(){
   const saved = getSavedSelections();
   if(!saved.length) return '';
   const fmt = n => n.toLocaleString('ru-RU');
   const cards = saved.map(s => `
-    <div class="finance-card" style="margin-bottom:8px;padding:12px">
+    <div class="finance-card" style="margin-bottom:8px;padding:12px;cursor:pointer" onclick="previewSavedSelection('${s.id}')">
       <div style="font-weight:600;font-size:14px;margin-bottom:4px">${s.name}</div>
       <div style="font-size:11px;color:var(--text2);margin-bottom:8px">${s.date} · ${s.count} пабликов · ${fmt(s.totalPrice)}₸ · ${fmt(s.totalSubs)} подп.</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${s.cities.slice(0,5).map(c=>'<span class="city-chip" style="font-size:10px;padding:2px 8px;pointer-events:none">'+c+'</span>').join('')}${s.cities.length>5?'<span style="font-size:10px;color:var(--text2)">+' +(s.cities.length-5)+'</span>':''}</div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
         <button class="btn btn-ghost" onclick="loadSavedSelection('${s.id}')" style="font-size:11px;padding:6px 10px;flex:1">📋 Загрузить</button>
         <button class="btn btn-ghost" onclick="shareFromSaved('${s.id}')" style="font-size:11px;padding:6px 10px;flex:1">📤 Отправить</button>
         <button class="btn btn-ghost" onclick="deleteSavedSelection('${s.id}')" style="font-size:11px;padding:6px 10px;color:var(--red)">🗑</button>
