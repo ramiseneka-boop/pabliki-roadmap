@@ -2194,30 +2194,215 @@ function renderParsingBase(app, prefix){
   `;
 }
 
+// ---- Mailing state ----
+let _mailText = '';
+let _mailMedia = null; // {name, size, blobUrl, type}
+let _mailSource = 'leads'; // leads | 2gis
+let _mailNicheFilter = new Set();
+let _mailCityFilter = new Set();
+let _mailStatusFilter = new Set();
+let _mailSelected = new Set();
+let _mailShowAll = false;
+let _mailSending = false;
+let _mailSendIdx = 0;
+let _mailSendList = [];
+
+function _mailGetRecipients(){
+  let list = [];
+  if(_mailSource === 'leads'){
+    list = getLeads().map(l=>({key:l.id, name:l.name, city:l.city, niche:l.niche, phone:l.whatsapp||l.phone, status: l.status||'new'}));
+  } else {
+    if(typeof LEADS_2GIS==='undefined'||!LEADS_2GIS) return [];
+    const crm = getParsCRM();
+    list = LEADS_2GIS.map(l=>{const k=l.p||l.n; return {key:k, name:l.n, city:l.c, niche:l.ni, phone:l.w||l.p||'', status: crm[k]?.status||'new'};});
+  }
+  if(_mailNicheFilter.size) list = list.filter(r=>_mailNicheFilter.has(r.niche));
+  if(_mailCityFilter.size) list = list.filter(r=>_mailCityFilter.has(r.city));
+  if(_mailStatusFilter.size) list = list.filter(r=>_mailStatusFilter.has(r.status));
+  return list;
+}
+
+function _mailToggleAll(){
+  const recs = _mailGetRecipients();
+  if(_mailSelected.size === recs.length){ _mailSelected.clear(); } else { recs.forEach(r=>_mailSelected.add(r.key)); }
+  render();
+}
+
+function _mailToggle(key){ if(_mailSelected.has(key)) _mailSelected.delete(key); else _mailSelected.add(key); render(); }
+
+function _mailStartSend(){
+  const recs = _mailGetRecipients().filter(r=>_mailSelected.has(r.key) && r.phone);
+  if(!recs.length){showToast('Нет получателей с номером');return;}
+  _mailSendList = recs;
+  _mailSendIdx = 0;
+  _mailSending = true;
+  render();
+}
+
+function _mailMarkSent(){
+  const r = _mailSendList[_mailSendIdx];
+  if(!r) return;
+  if(_mailSource === '2gis'){
+    const crm = getParsCRM();
+    if(!crm[r.key]) crm[r.key]={status:'new',touches:[]};
+    crm[r.key].status = 'sent';
+    crm[r.key].touches.push({date:new Date().toISOString().slice(0,10), note:'Рассылка'});
+    saveParsCRM(crm);
+  } else {
+    const leads = getLeads();
+    const l = leads.find(x=>x.id===r.key);
+    if(l){ l.status='sent'; l.lastContact=new Date().toISOString(); }
+    saveLeads(leads);
+  }
+  showToast('✅ Отмечено');
+}
+
+function _mailNext(){
+  _mailSendIdx++;
+  if(_mailSendIdx >= _mailSendList.length){ _mailSending=false; showToast('🎉 Рассылка завершена!'); }
+  render();
+}
+
+function _mailAttach(type){
+  const inp = document.createElement('input');
+  inp.type='file';
+  if(type==='photo') inp.accept='image/*';
+  else if(type==='video') inp.accept='video/*';
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    _mailMedia={name:f.name, size:(f.size/1024).toFixed(1)+'KB', blobUrl:URL.createObjectURL(f), type:f.type};
+    render();
+  };
+  inp.click();
+}
+
+function _highlightPlaceholders(text){
+  return text.replace(/\{(name|city|niche)\}/g,'<span style="background:oklch(from var(--primary) l c h / 0.2);color:var(--primary);padding:1px 4px;border-radius:3px;font-weight:700">{$1}</span>');
+}
+
 function renderMailingTab(app, prefix){
-  const tplCards = PARS_WA_TEMPLATES.map((t,i)=>{
-    const preview = t.text.replace(/{name}/g,'Компания').replace(/{city}/g,'Алматы').replace(/{niche}/g,'Рестораны').replace(/\n/g,'<br>');
-    return '<div class="finance-card"><h4 style="font-size:14px">'+t.name+'</h4><div style="font-size:12px;color:var(--text2);line-height:1.7;margin:10px 0;padding:12px;background:var(--surface);border-radius:var(--radius);border-left:3px solid var(--primary)">'+preview+'</div><div style="font-size:11px;color:var(--text3)">Плейсхолдеры: {name}, {city}, {niche}</div></div>';
-  }).join('');
+  // Analytics data
+  const crm = getParsCRM();
+  const allCrmEntries = Object.entries(crm);
+  const today = new Date().toISOString().slice(0,10);
+  let totalSent=0, sentToday=0, inDialog=0, clients=0, refused=0;
+  allCrmEntries.forEach(([k,v])=>{
+    if(v.status==='sent'||v.status==='dialog'||v.status==='client') totalSent++;
+    if(v.status==='dialog') inDialog++;
+    if(v.status==='client') clients++;
+    if(v.status==='refused') refused++;
+    if(v.touches?.some(t=>t.date===today)) sentToday++;
+  });
+  const convDialog = totalSent?Math.round(inDialog/totalSent*100):0;
+  const convClient = totalSent?Math.round(clients/totalSent*100):0;
+
+  // Sending mode
+  if(_mailSending && _mailSendList.length){
+    const r = _mailSendList[_mailSendIdx];
+    const msg = _mailText.replace(/{name}/g,r.name).replace(/{city}/g,r.city).replace(/{niche}/g,r.niche);
+    const waNum = (r.phone||'').replace(/[^0-9]/g,'');
+    const waUrl = waNum ? 'https://wa.me/'+waNum+'?text='+encodeURIComponent(msg) : '';
+    app.innerHTML = (prefix||'') + `
+      <div class="finance-card" style="text-align:center">
+        <h4>📤 Рассылка: ${_mailSendIdx+1} / ${_mailSendList.length}</h4>
+        <div style="margin:16px 0;font-size:15px;font-weight:700;color:var(--text)">${r.name}</div>
+        <div style="font-size:13px;color:var(--text2)">📍 ${r.city} · ${r.niche}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">📞 ${r.phone||'нет номера'}</div>
+        <div style="margin:16px 0;padding:12px;background:var(--surface);border-radius:var(--radius);text-align:left;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap">${msg}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          ${waUrl?`<a href="${waUrl}" target="_blank" class="btn btn-primary" style="text-decoration:none;background:var(--green)">💬 Открыть WhatsApp</a>`:''}
+          <button class="btn btn-ghost" onclick="_mailMarkSent()">✅ Отметить отправленным</button>
+          <button class="btn btn-primary" onclick="_mailNext()">➡️ Следующий</button>
+        </div>
+        <button class="btn btn-ghost" style="margin-top:12px" onclick="_mailSending=false;render()">✖ Отмена</button>
+      </div>`;
+    return;
+  }
+
+  // Get available filters
+  const recs = _mailGetRecipients();
+  let allRecs = [];
+  if(_mailSource==='leads') allRecs = getLeads().map(l=>({key:l.id,name:l.name,city:l.city,niche:l.niche,phone:l.whatsapp||l.phone,status:l.status||'new'}));
+  else if(typeof LEADS_2GIS!=='undefined'&&LEADS_2GIS){ const c=getParsCRM(); allRecs=LEADS_2GIS.map(l=>{const k=l.p||l.n;return{key:k,name:l.n,city:l.c,niche:l.ni,phone:l.w||l.p||'',status:c[k]?.status||'new'};}); }
+  const allCities = [...new Set(allRecs.map(r=>r.city).filter(Boolean))].sort();
+  const allNiches = [...new Set(allRecs.map(r=>r.niche).filter(Boolean))].sort();
+  const showRecs = _mailShowAll ? recs : recs.slice(0,20);
+
+  // Preview with first recipient
+  const previewR = recs.find(r=>_mailSelected.has(r.key)) || recs[0] || {name:'Компания',city:'Алматы',niche:'Рестораны'};
+  const previewText = (_mailText||'Введите текст сообщения...').replace(/{name}/g,previewR.name).replace(/{city}/g,previewR.city).replace(/{niche}/g,previewR.niche);
 
   app.innerHTML = (prefix||'') + `
-    <div class="finance-card" style="border-left:3px solid var(--green)">
-      <h4 style="color:var(--green);margin-bottom:8px">🎯 Воронка 7 касаний</h4>
-      <div style="font-size:12px;color:var(--text2);line-height:2">
-        <div>1️⃣ <b>Знакомство</b> → представиться, дать ценность, задать вопрос</div>
-        <div>2️⃣ <b>Подборка</b> → через 1-2 дня, персональный медиаплан PDF</div>
-        <div>3️⃣ <b>Кейс</b> → через 2-3 дня, соцдоказательство</div>
-        <div>4️⃣ <b>Спецпредложение</b> → через 3-5 дней, дедлайн</div>
-        <div>5️⃣ <b>Follow-up</b> → через 5-7 дней, мягкое напоминание</div>
-        <div>6️⃣ <b>Реактивация</b> → через 14 дней, новый оффер</div>
-        <div>7️⃣ <b>Финальное</b> → через 30 дней, дверь открыта</div>
+    <!-- Конструктор сообщения -->
+    <div class="finance-card">
+      <h4>✏️ Конструктор сообщения</h4>
+      <textarea id="mailTextArea" rows="6" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;margin:8px 0" placeholder="Введите текст сообщения... Используйте {name}, {city}, {niche}">${_mailText.replace(/</g,'&lt;')}</textarea>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px" onclick="document.getElementById('tplPicker').style.display=document.getElementById('tplPicker').style.display==='none'?'block':'none'">🤖 Сгенерировать</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px" onclick="_mailAttach('photo')">📷 Фото</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px" onclick="_mailAttach('video')">🎥 Видео</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px" onclick="_mailAttach('file')">📎 Файл</button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px">⏰ Пауза 1-3 дня между касаниями. Рекомендуемый лимит: 15-20 контактов/день.</div>
+      ${_mailMedia?`<div style="font-size:12px;color:var(--text2);padding:8px;background:var(--surface);border-radius:var(--radius);display:flex;align-items:center;gap:8px;margin-bottom:8px">📎 ${_mailMedia.name} (${_mailMedia.size}) <span style="cursor:pointer;color:var(--red)" onclick="_mailMedia=null;render()">✕</span></div>`:''}
+      <div id="tplPicker" style="display:none;margin-top:8px">
+        ${PARS_WA_TEMPLATES.map((t,i)=>`<button class="btn btn-ghost" style="font-size:11px;padding:7px 12px;margin:3px;text-align:left;display:block;width:100%" onclick="_mailText=PARS_WA_TEMPLATES[${i}].text;document.getElementById('tplPicker').style.display='none';render()">${t.name}</button>`).join('')}
+      </div>
     </div>
-    <h3 style="margin:16px 0 12px;font-size:16px;font-weight:800">📝 Шаблоны сообщений</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Используйте кнопку «📤 WhatsApp» в карточке лида (Мои лиды) или откройте CRM-карточку (База 2GIS) для отправки по воронке.</p>
-    ${tplCards}
-    <div class="finance-card" style="border-left:3px solid var(--red);margin-top:16px">
+
+    <!-- Выбор получателей -->
+    <div class="finance-card">
+      <h4>👥 Выбор получателей</h4>
+      <div class="mode-toggle" style="margin:8px 0">
+        <div class="mode-btn ${_mailSource==='leads'?'active':''}" onclick="_mailSource='leads';_mailSelected.clear();_mailNicheFilter.clear();_mailCityFilter.clear();render()">🎯 Мои лиды</div>
+        <div class="mode-btn ${_mailSource==='2gis'?'active':''}" onclick="_mailSource='2gis';_mailSelected.clear();_mailNicheFilter.clear();_mailCityFilter.clear();render()">📋 База 2GIS</div>
+      </div>
+      ${allCities.length?`<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">🏙️ Город:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${allCities.slice(0,15).map(c=>`<button class="city-chip ${_mailCityFilter.has(c)?'active':''}" onclick="_mailCityFilter.has('${c.replace(/'/g,"\\'")}')?_mailCityFilter.delete('${c.replace(/'/g,"\\'")}'):_mailCityFilter.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`).join('')}</div></div>`:''}
+      ${allNiches.length?`<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">📂 Ниша:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${allNiches.slice(0,15).map(n=>`<button class="city-chip ${_mailNicheFilter.has(n)?'active':''}" onclick="_mailNicheFilter.has('${n.replace(/'/g,"\\'")}')?_mailNicheFilter.delete('${n.replace(/'/g,"\\'")}'):_mailNicheFilter.add('${n.replace(/'/g,"\\'")}');render()">${n}</button>`).join('')}</div></div>`:''}
+      <div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">📊 Статус:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${PARS_STATUSES.map(s=>`<button class="city-chip ${_mailStatusFilter.has(s.id)?'active':''}" onclick="_mailStatusFilter.has('${s.id}')?_mailStatusFilter.delete('${s.id}'):_mailStatusFilter.add('${s.id}');render()">${s.icon} ${s.label}</button>`).join('')}</div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0">
+        <span style="font-size:13px;color:var(--text2)">Выбрано: <strong style="color:var(--primary)">${_mailSelected.size}</strong> получателей</span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="_mailToggleAll()">${_mailSelected.size===recs.length?'Снять все':'Выбрать всех'}</button>
+      </div>
+      <div style="max-height:320px;overflow-y:auto">
+        ${showRecs.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <div class="sel-check ${_mailSelected.has(r.key)?'checked':''}" onclick="_mailToggle('${r.key.replace(/'/g,"\\'")}')"></div>
+          <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><b style="color:var(--text)">${r.name}</b> <span style="color:var(--text3)">· ${r.city} · ${r.niche}</span></div>
+          <span style="font-size:10px">${PARS_STATUSES.find(s=>s.id===r.status)?.icon||'🆕'}</span>
+        </div>`).join('')}
+        ${recs.length>20&&!_mailShowAll?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:11px" onclick="_mailShowAll=true;render()">Ещё ${recs.length-20} →</button>`:''}
+      </div>
+    </div>
+
+    <!-- Предпросмотр -->
+    <div class="finance-card">
+      <h4>👁️ Предпросмотр</h4>
+      <div style="padding:12px;background:var(--surface);border-radius:var(--radius);font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap;margin:8px 0">${_highlightPlaceholders(previewText.replace(/</g,'&lt;'))}</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="_mailStartSend()">📤 Начать рассылку (${_mailSelected.size} получателей)</button>
+    </div>
+
+    <!-- Аналитика рассылки -->
+    <div class="finance-card">
+      <h4>📊 Аналитика рассылки</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0">
+        <div style="text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius)"><div style="font-size:20px;font-weight:800;color:var(--primary)">${totalSent}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:2px">Всего отпр.</div></div>
+        <div style="text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius)"><div style="font-size:20px;font-weight:800;color:var(--peach)">${sentToday}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:2px">Сегодня</div></div>
+        <div style="text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius)"><div style="font-size:20px;font-weight:800;color:#8b5cf6">${inDialog}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:2px">В диалоге</div></div>
+        <div style="text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius)"><div style="font-size:20px;font-weight:800;color:var(--green)">${clients}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:2px">Клиенты</div></div>
+        <div style="text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius)"><div style="font-size:20px;font-weight:800;color:var(--red)">${refused}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:2px">Отказы</div></div>
+        <div style="text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius)"><div style="font-size:20px;font-weight:800;color:var(--accent)">${convClient}%</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:2px">Конверсия</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">Воронка конверсии</div>
+        ${[
+          {label:'Отправлено',val:totalSent,color:'var(--primary)',pct:100},
+          {label:'В диалоге',val:inDialog,color:'#8b5cf6',pct:totalSent?Math.round(inDialog/totalSent*100):0},
+          {label:'Клиенты',val:clients,color:'var(--green)',pct:totalSent?Math.round(clients/totalSent*100):0}
+        ].map(f=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700;color:${f.color}">${f.val} (${f.pct}%)</span></div><div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden"><div style="height:100%;width:${f.pct}%;background:${f.color};border-radius:3px;transition:width .5s"></div></div></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Красные линии -->
+    <div class="finance-card" style="border-left:3px solid var(--red)">
       <h4 style="color:var(--red)">🚫 Красные линии</h4>
       <div style="font-size:12px;color:var(--text2);line-height:2">
         <div>• Минимум 1 день между касаниями одному лиду</div>
@@ -2227,7 +2412,28 @@ function renderMailingTab(app, prefix){
         <div>• Себестоимость клиенту не показываем</div>
       </div>
     </div>
+
+    <!-- Стратегия воронки -->
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;font-size:14px;font-weight:700;color:var(--text);padding:12px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius)">ℹ️ Стратегия воронки (7 касаний)</summary>
+      <div class="finance-card" style="border-top:none;border-radius:0 0 var(--radius) var(--radius);margin-top:-1px">
+        <div style="font-size:12px;color:var(--text2);line-height:2">
+          <div>1️⃣ <b>Знакомство</b> → представиться, дать ценность, задать вопрос</div>
+          <div>2️⃣ <b>Подборка</b> → через 1-2 дня, персональный медиаплан PDF</div>
+          <div>3️⃣ <b>Кейс</b> → через 2-3 дня, соцдоказательство</div>
+          <div>4️⃣ <b>Спецпредложение</b> → через 3-5 дней, дедлайн</div>
+          <div>5️⃣ <b>Follow-up</b> → через 5-7 дней, мягкое напоминание</div>
+          <div>6️⃣ <b>Реактивация</b> → через 14 дней, новый оффер</div>
+          <div>7️⃣ <b>Финальное</b> → через 30 дней, дверь открыта</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">⏰ Пауза 1-3 дня между касаниями. Рекомендуемый лимит: 15-20 контактов/день.</div>
+      </div>
+    </details>
   `;
+
+  // Bind textarea
+  const ta = document.getElementById('mailTextArea');
+  if(ta) ta.addEventListener('input', e=>{ _mailText = e.target.value; });
 }
 
 function renderCRMTab(app, prefix){
@@ -2695,9 +2901,12 @@ function exportSelPDF(){
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Montserrat',sans-serif;color:#1f2937;background:#fff}
-    .back-btn{position:fixed;top:16px;left:16px;z-index:100;padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-    .back-btn:active{transform:scale(0.95)}
-    @media print{.back-btn{display:none}}
+    .back-btn,.share-btn,.print-btn{position:fixed;top:16px;z-index:100;padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+    .back-btn{left:16px}
+    .share-btn{left:130px;background:#8b5cf6}
+    .print-btn{left:280px;background:#16a34a}
+    .back-btn:active,.share-btn:active,.print-btn:active{transform:scale(0.95)}
+    @media print{.back-btn,.share-btn,.print-btn{display:none}}
     .page{max-width:800px;margin:0 auto;padding:40px}
     .header{text-align:center;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #2563eb}
     .logo{font-size:28px;font-weight:800;color:#2563eb;letter-spacing:2px}
@@ -2745,10 +2954,12 @@ function exportSelPDF(){
     </table>
     <div class="footer">
       pabliki.kz · 700+ пабликов · 14 регионов · 93М+ просмотров<br>
-      +7 777 151 6166 · WhatsApp
+      +7 777 069 82 92 · WhatsApp
     </div>
   </div>
   <button class="back-btn" onclick="window.close();history.back()">← Назад</button>
+  <button class="share-btn" onclick="if(navigator.share){navigator.share({title:'Медиаплан Pabliki.kz',url:location.href}).catch(()=>{})}else{navigator.clipboard.writeText(location.href).then(()=>alert('URL скопирован!'))}">📤 Поделиться</button>
+  <button class="print-btn" onclick="window.print()">🖨 Печать</button>
   </body></html>`;
   
   const w = window.open('','_blank');
@@ -2771,7 +2982,7 @@ function shareSel(){
     `${i+1}. @${p.ig} (${p.c}) ${catIcons[p.t]||''} — ${fmt(p.s)} подп. — ${fmt(p.p)}₸`
   ).join('\n');
   
-  const text = `📋 МЕДИАПЛАН PABLIKI.KZ\n${date}\n\n${selected.length} пабликов · ${fmt(totalSubs)} подписчиков\n\n${rows}\n\n💰 Итого: ${fmt(totalPrice)}₸\n\n🌐 pabliki.kz · +7 777 151 6166`;
+  const text = `📋 МЕДИАПЛАН PABLIKI.KZ\n${date}\n\n${selected.length} пабликов · ${fmt(totalSubs)} подписчиков\n\n${rows}\n\n💰 Итого: ${fmt(totalPrice)}₸\n\n🌐 pabliki.kz · +7 777 069 82 92`;
   
   if(navigator.share && navigator.canShare){
     // Try sharing as file
