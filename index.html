@@ -2281,6 +2281,15 @@ function _highlightPlaceholders(text){
 }
 
 function renderMailingTab(app, prefix){
+  // Ensure 2GIS data loaded when source is 2gis
+  if(_mailSource==='2gis' && (typeof LEADS_2GIS === 'undefined' || !LEADS_2GIS || !LEADS_2GIS.length)){
+    ensureLeads2GIS(app, ()=>render());
+    if(_leads2gisLoading){
+      app.innerHTML = (prefix||'') + '<div style="text-align:center;padding:40px"><div style="font-size:32px;animation:spin 1s linear infinite;display:inline-block">🔄</div><p style="margin-top:12px;color:var(--text2)">Загрузка базы 2GIS...</p></div>';
+      return;
+    }
+  }
+
   // Analytics data
   const crm = getParsCRM();
   const allCrmEntries = Object.entries(crm);
@@ -2356,9 +2365,9 @@ function renderMailingTab(app, prefix){
         <div class="mode-btn ${_mailSource==='leads'?'active':''}" onclick="_mailSource='leads';_mailSelected.clear();_mailNicheFilter.clear();_mailCityFilter.clear();render()">🎯 Мои лиды</div>
         <div class="mode-btn ${_mailSource==='2gis'?'active':''}" onclick="_mailSource='2gis';_mailSelected.clear();_mailNicheFilter.clear();_mailCityFilter.clear();render()">📋 База 2GIS</div>
       </div>
-      ${allCities.length?`<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">🏙️ Город:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${allCities.slice(0,15).map(c=>`<button class="city-chip ${_mailCityFilter.has(c)?'active':''}" onclick="_mailCityFilter.has('${c.replace(/'/g,"\\'")}')?_mailCityFilter.delete('${c.replace(/'/g,"\\'")}'):_mailCityFilter.add('${c.replace(/'/g,"\\'")}');render()">${c}</button>`).join('')}</div></div>`:''}
-      ${allNiches.length?`<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">📂 Ниша:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${allNiches.slice(0,15).map(n=>`<button class="city-chip ${_mailNicheFilter.has(n)?'active':''}" onclick="_mailNicheFilter.has('${n.replace(/'/g,"\\'")}')?_mailNicheFilter.delete('${n.replace(/'/g,"\\'")}'):_mailNicheFilter.add('${n.replace(/'/g,"\\'")}');render()">${n}</button>`).join('')}</div></div>`:''}
-      <div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">📊 Статус:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${PARS_STATUSES.map(s=>`<button class="city-chip ${_mailStatusFilter.has(s.id)?'active':''}" onclick="_mailStatusFilter.has('${s.id}')?_mailStatusFilter.delete('${s.id}'):_mailStatusFilter.add('${s.id}');render()">${s.icon} ${s.label}</button>`).join('')}</div></div>
+      ${allCities.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">🏙️ Город: ${_mailCityFilter.size?'<span style="color:var(--primary)">('+_mailCityFilter.size+' выбрано)</span>':''}</div><div style="display:flex;flex-wrap:wrap;gap:4px"><button class="city-chip ${_mailCityFilter.size===0?'active':''}" onclick="_mailCityFilter.clear();render()">Все</button>${allCities.map(c=>{const cnt=allRecs.filter(r=>r.city===c).length;return`<button class="city-chip ${_mailCityFilter.has(c)?'active':''}" onclick="_mailCityFilter.has('${c.replace(/'/g,"\\'")}')?_mailCityFilter.delete('${c.replace(/'/g,"\\'")}'):_mailCityFilter.add('${c.replace(/'/g,"\\'")}');render()">${c} (${cnt})</button>`;}).join('')}</div></div>`:''}
+      ${allNiches.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">📂 Категория/Ниша: ${_mailNicheFilter.size?'<span style="color:var(--primary)">('+_mailNicheFilter.size+' выбрано)</span>':''}</div><div style="display:flex;flex-wrap:wrap;gap:4px"><button class="city-chip ${_mailNicheFilter.size===0?'active':''}" onclick="_mailNicheFilter.clear();render()">Все</button>${allNiches.map(n=>{const cnt=allRecs.filter(r=>r.niche===n).length;return`<button class="city-chip ${_mailNicheFilter.has(n)?'active':''}" onclick="_mailNicheFilter.has('${n.replace(/'/g,"\\'")}')?_mailNicheFilter.delete('${n.replace(/'/g,"\\'")}'):_mailNicheFilter.add('${n.replace(/'/g,"\\'")}');render()">${n} (${cnt})</button>`;}).join('')}</div></div>`:''}
+      <div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">📊 Статус:</div><div style="display:flex;flex-wrap:wrap;gap:4px">${PARS_STATUSES.map(s=>`<button class="city-chip ${_mailStatusFilter.has(s.id)?'active':''}" onclick="_mailStatusFilter.has('${s.id}')?_mailStatusFilter.delete('${s.id}'):_mailStatusFilter.add('${s.id}');render()">${s.icon} ${s.label}</button>`).join('')}</div></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0">
         <span style="font-size:13px;color:var(--text2)">Выбрано: <strong style="color:var(--primary)">${_mailSelected.size}</strong> получателей</span>
         <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="_mailToggleAll()">${_mailSelected.size===recs.length?'Снять все':'Выбрать всех'}</button>
