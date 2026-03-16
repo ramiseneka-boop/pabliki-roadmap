@@ -610,10 +610,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchView('media')"><span class="icon">🗺️</span><span class="label">Медиа</span></div>
+  <div class="nav-item" onclick="switchView('roadmap')"><span class="icon">📊</span><span class="label">Roadmap</span></div>
   <div class="nav-item" onclick="switchView('selection')"><span class="icon">📋</span><span class="label">Подборка</span></div>
   <div class="nav-item" onclick="switchView('telegram')"><span class="icon">✈️</span><span class="label">Telegram</span></div>
   <div class="nav-item" onclick="switchView('clients')"><span class="icon">👥</span><span class="label">Клиенты</span></div>
-  <div class="nav-item" onclick="switchView('whatsapp')"><span class="icon">💬</span><span class="label">WhatsApp</span></div>
   <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
 </div>
 
@@ -1668,7 +1668,7 @@ function setFilter(f){ currentFilter = f; render(); }
 function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
-    const views = ['media','selection','telegram','clients','whatsapp','settings'];
+    const views = ['media','roadmap','selection','telegram','clients','settings'];
     el.classList.toggle('active', views[i]===currentView);
   });
 }
