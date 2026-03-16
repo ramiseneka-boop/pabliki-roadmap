@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Pabliki Growth — Roadmap</title>
 <script src="pabliki-data.js?v=21"></script>
+<script src="telegram-data.js?v=21"></script>
 <script src="leads-data.js?v=21"></script>
 <!-- leads-2gis.js загружается лениво при открытии вкладки Клиенты → База 2GIS -->
 <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -610,6 +611,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchView('media')"><span class="icon">🗺️</span><span class="label">Медиа</span></div>
   <div class="nav-item" onclick="switchView('selection')"><span class="icon">📋</span><span class="label">Подборка</span></div>
+  <div class="nav-item" onclick="switchView('telegram')"><span class="icon">✈️</span><span class="label">Telegram</span></div>
   <div class="nav-item" onclick="switchView('clients')"><span class="icon">👥</span><span class="label">Клиенты</span></div>
   <div class="nav-item" onclick="switchView('whatsapp')"><span class="icon">💬</span><span class="label">WhatsApp</span></div>
   <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
@@ -1061,10 +1063,11 @@ function saveState(){
 // ===================== RENDER =====================
 function render(){
   const app = document.getElementById('app');
-  if(currentView !== 'selection') app.classList.remove('wide-view');
+  if(currentView !== 'selection' && currentView !== 'telegram') app.classList.remove('wide-view');
   if(currentView === 'media') renderMedia(app);
   else if(currentView === 'roadmap') renderRoadmap(app);
   else if(currentView === 'selection') renderSelection(app);
+  else if(currentView === 'telegram') renderTelegram(app);
   else if(currentView === 'clients') renderClients(app);
   else if(currentView === 'finance') renderFinance(app);
   else if(currentView === 'whatsapp') renderWhatsapp(app);
@@ -1266,11 +1269,11 @@ function renderMedia(app){
         <div class="media-card-desc">Городские паблики Казахстана</div></div>
         <div class="media-card-stats">${dbCount} ресурсов · ${fmt(dbSubs)} подписчиков</div>
       </div>
-      <div class="media-card disabled" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
-        <div><div class="media-card-icon">✈️</div>
+      <div class="media-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)" onclick="switchView('telegram')">
+        <div><div class="media-card-icon">✈️</div><div class="media-card-arrow">→</div>
         <div class="media-card-title">Telegram каналы</div>
         <div class="media-card-desc">Новостные и тематические каналы</div></div>
-        <div class="media-card-badge">Скоро появится</div>
+        <div class="media-card-stats">${typeof TELEGRAM_DB!=='undefined'?TELEGRAM_DB.length+' каналов · '+fmt(TELEGRAM_DB.reduce((s,ch)=>s+(ch.s||0),0))+' подписчиков':'Данные загружаются...'}</div>
       </div>
       <div class="media-card disabled" style="background:linear-gradient(135deg,#e52d27,#b31217)">
         <div><div class="media-card-icon">▶️</div>
@@ -1665,7 +1668,7 @@ function setFilter(f){ currentFilter = f; render(); }
 function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
-    const views = ['media','selection','clients','whatsapp','settings'];
+    const views = ['media','selection','telegram','clients','whatsapp','settings'];
     el.classList.toggle('active', views[i]===currentView);
   });
 }
@@ -2756,6 +2759,16 @@ let selShowOnly = false;
 let selShowCount = 100;
 let selViewMode = 'cards'; // 'cards' or 'table'
 
+// ===================== TELEGRAM STATE =====================
+let tgSelected = new Set();
+let tgCities = new Set();
+let tgCats = new Set();
+let tgSearch = '';
+let tgShowCount = 30;
+let tgSortField = 's';
+let tgSortDir = -1;
+let tgViewMode = 'cards'; // 'cards' or 'table'
+
 // Restore from localStorage
 (function restoreSelection(){
   try {
@@ -3420,6 +3433,152 @@ function shareSel(){
     // Fallback: open PDF view
     exportSelPDF();
   }
+}
+
+// ===================== TELEGRAM TAB =====================
+function _tgFmt(n){
+  if(n>=1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  if(n>=1000) return (n/1000).toFixed(n>=100000?0:1).replace(/\.0$/,'')+'K';
+  return String(n);
+}
+
+function getFilteredTelegram(){
+  if(typeof TELEGRAM_DB==='undefined'||!TELEGRAM_DB) return [];
+  let list = TELEGRAM_DB.filter(ch=>{
+    if(tgCities.size && !tgCities.has(ch.c)) return false;
+    if(tgCats.size && !tgCats.has(ch.t)) return false;
+    if(tgSearch){
+      const q=tgSearch.toLowerCase();
+      if(!(ch.h||'').toLowerCase().includes(q) && !(ch.n||ch.h||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  list.sort((a,b)=>{
+    let va=a[tgSortField], vb=b[tgSortField];
+    if(typeof va==='string') return va.localeCompare(vb,'ru')*tgSortDir;
+    return ((va||0)-(vb||0))*tgSortDir;
+  });
+  return list;
+}
+
+function toggleTgSel(h){
+  if(tgSelected.has(h)) tgSelected.delete(h); else tgSelected.add(h);
+  render();
+}
+
+function tgSetSort(field){
+  if(tgSortField===field) tgSortDir=tgSortDir===1?-1:1;
+  else { tgSortField=field; tgSortDir=field==='n'||field==='h'?1:-1; }
+  render();
+}
+
+function renderTelegram(app){
+  if(typeof TELEGRAM_DB==='undefined'||!TELEGRAM_DB||!TELEGRAM_DB.length){
+    app.innerHTML = `<div class="header"><img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px"><img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px"><p>Telegram каналы</p></div><div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:40px;margin-bottom:16px">✈️</div><div style="font-size:16px;font-weight:600">Данные загружаются...</div><div style="font-size:13px;margin-top:8px">Файл telegram-data.js ещё не подключен</div></div>`;
+    return;
+  }
+
+  const appEl=document.getElementById('app');
+  if(appEl){ if(tgViewMode==='cards') appEl.classList.add('wide-view'); else appEl.classList.remove('wide-view'); }
+
+  const DB=TELEGRAM_DB;
+  const CITIES=typeof TELEGRAM_CITIES!=='undefined'?TELEGRAM_CITIES:[];
+  const CATS=typeof TELEGRAM_CATS!=='undefined'?TELEGRAM_CATS:[];
+  const filtered=getFilteredTelegram();
+  const shown=filtered.slice(0,tgShowCount);
+  const hasMore=filtered.length>tgShowCount;
+
+  // Stats
+  const totalChannels=DB.length;
+  const totalCities=new Set(DB.map(ch=>ch.c)).size;
+  const totalSubs=DB.reduce((s,ch)=>s+(ch.s||0),0);
+  const avgViews=DB.length?Math.round(DB.reduce((s,ch)=>s+(ch.v||0),0)/DB.length):0;
+
+  // Selected totals
+  const allSel=DB.filter(ch=>tgSelected.has(ch.h));
+  const selSubs=allSel.reduce((s,ch)=>s+(ch.s||0),0);
+
+  const fmt=n=>n.toLocaleString('ru-RU');
+
+  // City chips
+  const cityChips=CITIES.map(c=>`<button class="city-chip ${tgCities.has(c)?'active':''}" onclick="tgCities.has('${c.replace(/'/g,"\\'")}')?tgCities.delete('${c.replace(/'/g,"\\'")}'):tgCities.add('${c.replace(/'/g,"\\'")}');tgShowCount=30;render()">${c}</button>`).join('');
+
+  // Cat chips
+  const catChips=CATS.map(c=>`<button class="city-chip ${tgCats.has(c)?'active':''}" onclick="tgCats.has('${c.replace(/'/g,"\\'")}')?tgCats.delete('${c.replace(/'/g,"\\'")}'):tgCats.add('${c.replace(/'/g,"\\'")}');tgShowCount=30;render()">${c}</button>`).join('');
+
+  // Sort buttons
+  const sortBtns=[['s','Подписчики'],['v','Просмотры'],['n','Название']].map(([f,l])=>
+    `<button class="sel-sort-btn ${tgSortField===f?'active':''}" onclick="tgSetSort('${f}')">${l} ${tgSortField===f?(tgSortDir===1?'▲':'▼'):''}</button>`
+  ).join('');
+
+  // Cards
+  let contentHTML='';
+  if(tgViewMode==='cards'){
+    const cards=shown.map(ch=>{
+      const checked=tgSelected.has(ch.h);
+      const letter=(ch.h||'?')[0].toUpperCase();
+      const name=ch.n||('@'+ch.h);
+      return `<div class="sel-card ${checked?'selected':''}" onclick="toggleTgSel('${ch.h}')">
+        <div class="sel-card-check"><div class="sel-check ${checked?'checked':''}"></div></div>
+        <div class="sel-card-top">
+          <div class="sel-card-avatar" style="${_avatarGrad(ch.h)}">${letter}</div>
+          <div class="sel-card-info">
+            <div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+            <a class="sel-card-handle" href="https://t.me/${ch.h}" target="_blank" onclick="event.stopPropagation()">@${ch.h}</a>
+            <div class="sel-card-sub">${ch.c||''} · 📰 ${ch.t||''}</div>
+          </div>
+        </div>
+        <div class="sel-card-body">
+          <span class="sel-card-subs">👥 ${_tgFmt(ch.s||0)}</span>
+          ${ch.v?'<span class="sel-card-price" style="color:var(--accent)">👁 '+_tgFmt(ch.v)+'</span>':''}
+        </div>
+      </div>`;
+    }).join('');
+    contentHTML=`<div class="sel-sort-bar"><span>Сортировка:</span>${sortBtns}</div><div class="sel-cards-grid">${cards}</div>`;
+  } else {
+    // Table
+    const sa=(f)=>tgSortField===f?(tgSortDir===1?'▲':'▼'):'';
+    const rows=shown.map(ch=>{
+      const checked=tgSelected.has(ch.h);
+      const name=ch.n||('@'+ch.h);
+      return `<tr><td><div class="sel-check ${checked?'checked':''}" onclick="toggleTgSel('${ch.h}')"></div></td><td style="font-weight:600">${name}</td><td><a class="ig-link" href="https://t.me/${ch.h}" target="_blank">@${ch.h}</a></td><td style="font-size:10.5px">${ch.c||''}</td><td style="font-size:10px">${ch.t||''}</td><td class="num">${fmt(ch.s||0)}</td><td class="num">${ch.v?fmt(ch.v):'-'}</td></tr>`;
+    }).join('');
+    contentHTML=`<div class="table-wrap"><table class="sel-table"><thead><tr><th></th><th class="sortable" onclick="tgSetSort('n')">Название ${sa('n')}</th><th class="sortable" onclick="tgSetSort('h')">Handle ${sa('h')}</th><th class="sortable" onclick="tgSetSort('c')">Город ${sa('c')}</th><th>Кат.</th><th class="num sortable" onclick="tgSetSort('s')">Подп. ${sa('s')}</th><th class="num sortable" onclick="tgSetSort('v')">Просм. ${sa('v')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+      <p>Telegram каналы Казахстана</p>
+    </div>
+
+    <div class="sel-stats-bar">
+      <div class="sel-stat"><div class="sel-stat-num">${totalChannels}</div><div class="sel-stat-label">📊 Каналов</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${totalCities}</div><div class="sel-stat-label">🏙 Городов</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${_tgFmt(totalSubs)}</div><div class="sel-stat-label">👥 Подписчики</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${_tgFmt(avgViews)}</div><div class="sel-stat-label">👁 Ср. просмотры</div></div>
+    </div>
+
+    <div class="sel-view-toggle">
+      <div class="sel-view-btn ${tgViewMode==='cards'?'active':''}" onclick="tgViewMode='cards';render()">🃏 Карточки</div>
+      <div class="sel-view-btn ${tgViewMode==='table'?'active':''}" onclick="tgViewMode='table';render()">📊 Таблица</div>
+    </div>
+
+    <input type="text" class="ig-search" placeholder="🔍 Поиск по @handle / названию..." value="${tgSearch}" oninput="tgSearch=this.value;tgShowCount=30;render()">
+
+    ${CATS.length?`<div class="filter-section"><h4>📂 Категория</h4><div class="city-chips"><button class="city-chip ${tgCats.size===0?'active':''}" onclick="tgCats.clear();tgShowCount=30;render()">Все</button>${catChips}</div></div>`:''}
+
+    ${CITIES.length?`<div class="filter-section"><h4>🏙️ Город</h4><div class="city-chips"><button class="city-chip ${tgCities.size===0?'active':''}" onclick="tgCities.clear();tgShowCount=30;render()">Все</button>${cityChips}</div></div>`:''}
+
+    <div class="sel-count">Найдено: <strong>${filtered.length}</strong> · Выбрано: <strong>${allSel.length}</strong></div>
+
+    ${allSel.length>0?`<div class="sel-sticky"><div class="sel-total"><div class="sel-total-row"><span class="label">Выбрано каналов</span><span class="val">${allSel.length}</span></div><div class="sel-total-row"><span class="label">Суммарные подписчики</span><span class="val">${fmt(selSubs)}</span></div></div><div class="sel-actions"><button class="btn btn-ghost" onclick="tgSelected.clear();render()">✕ Сбросить</button></div></div>`:''}
+
+    ${contentHTML}
+
+    ${hasMore?`<button onclick="tgShowCount+=30;render()" class="btn btn-primary" style="width:100%;margin:12px 0">Показать ещё (+${Math.min(30,filtered.length-tgShowCount)})</button>`:''}
+  `;
 }
 
 // ===================== INIT =====================
