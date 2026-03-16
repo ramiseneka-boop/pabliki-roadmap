@@ -301,6 +301,36 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 @media(min-width:600px){.sel-cards-grid{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:900px){.sel-cards-grid{grid-template-columns:repeat(3,1fr)}}
 
+/* ======================== MEDIA DASHBOARD ======================== */
+.media-header{text-align:center;padding:16px 0 8px}
+.media-header h2{font-size:22px;font-weight:800;color:var(--text)}
+.media-header p{font-size:13px;color:var(--text2);margin-top:4px}
+.media-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px}
+@media(min-width:600px){.media-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.media-grid{grid-template-columns:repeat(3,1fr)}}
+.media-card{position:relative;border-radius:16px;padding:20px;min-height:160px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:transform .15s,box-shadow .15s;overflow:hidden;text-decoration:none}
+.media-card:active{transform:scale(0.97)}
+.media-card.disabled{opacity:0.7;cursor:default}
+.media-card.disabled:active{transform:none}
+.media-card-icon{font-size:40px;line-height:1}
+.media-card-arrow{position:absolute;top:18px;right:18px;font-size:18px;color:rgba(255,255,255,0.6)}
+.media-card-title{font-size:17px;font-weight:800;color:#fff;margin-top:8px}
+.media-card-desc{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px}
+.media-card-stats{font-size:11px;color:rgba(255,255,255,0.85);font-weight:600;margin-top:auto;padding-top:12px}
+.media-card-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.15);margin-top:auto;padding-top:3px;align-self:flex-start}
+
+/* ======================== WHATSAPP TAB ======================== */
+.wa-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.wa-stat{text-align:center;padding:14px 8px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.wa-stat .wa-num{font-size:20px;font-weight:800;line-height:1.2}
+.wa-stat .wa-label{font-size:9px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}
+.wa-tpl-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.wa-tpl-card h5{font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.wa-tpl-preview{font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;max-height:80px;overflow:hidden;margin-bottom:10px}
+.wa-tpl-actions{display:flex;gap:6px}
+.wa-history-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)}
+.wa-history-row:last-child{border-bottom:none}
+
 /* ======================== LOGO ======================== */
 .header-logo{height:40px;width:auto}
 [data-theme="dark"] .logo-light{display:inline}
@@ -578,10 +608,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div id="app"></div>
 
 <div class="bottom-nav">
-  <div class="nav-item active" onclick="switchView('roadmap')"><span class="icon">🗺️</span><span class="label">Roadmap</span></div>
+  <div class="nav-item active" onclick="switchView('media')"><span class="icon">🗺️</span><span class="label">Медиа</span></div>
   <div class="nav-item" onclick="switchView('selection')"><span class="icon">📋</span><span class="label">Подборка</span></div>
   <div class="nav-item" onclick="switchView('clients')"><span class="icon">👥</span><span class="label">Клиенты</span></div>
-  <div class="nav-item" onclick="switchView('finance')"><span class="icon">💰</span><span class="label">Экономика</span></div>
+  <div class="nav-item" onclick="switchView('whatsapp')"><span class="icon">💬</span><span class="label">WhatsApp</span></div>
   <div class="nav-item" onclick="switchView('settings')"><span class="icon">⚙️</span><span class="label">Ещё</span></div>
 </div>
 
@@ -1011,7 +1041,7 @@ function victoriaAction(taskId, title, type) {
 
 // ===================== STATE =====================
 let state = loadState();
-let currentView = 'roadmap';
+let currentView = 'media';
 let currentFilter = 'all';
 let expandedTasks = {};
 let roadmapSearch = '';
@@ -1032,10 +1062,12 @@ function saveState(){
 function render(){
   const app = document.getElementById('app');
   if(currentView !== 'selection') app.classList.remove('wide-view');
-  if(currentView === 'roadmap') renderRoadmap(app);
+  if(currentView === 'media') renderMedia(app);
+  else if(currentView === 'roadmap') renderRoadmap(app);
   else if(currentView === 'selection') renderSelection(app);
   else if(currentView === 'clients') renderClients(app);
   else if(currentView === 'finance') renderFinance(app);
+  else if(currentView === 'whatsapp') renderWhatsapp(app);
   else renderSettings(app);
   updateNav();
 }
@@ -1212,6 +1244,180 @@ const TASK_COSTS = {
   t67: {name:'KPI: 100 заказов', cost:0, type:'once', cat:'KPI', note:'цель'},
 };
 
+function renderMedia(app){
+  const dbCount = typeof PABLIKI_DB !== 'undefined' ? PABLIKI_DB.length : 0;
+  const dbSubs = typeof PABLIKI_DB !== 'undefined' ? PABLIKI_DB.reduce((s,p)=>s+p.s,0) : 0;
+  const fmt = n => n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?Math.round(n/1000)+'K':String(n);
+  const leadsCount = getLeads().length;
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+    </div>
+    <div class="media-header">
+      <h2>Медиа-ресурсы</h2>
+      <p>${dbCount} ресурсов · ${fmt(dbSubs)} подписчиков</p>
+    </div>
+    <div class="media-grid">
+      <div class="media-card" style="background:linear-gradient(135deg,#667eea,#764ba2)" onclick="switchView('selection')">
+        <div><div class="media-card-icon">📱</div><div class="media-card-arrow">→</div>
+        <div class="media-card-title">Instagram Паблики</div>
+        <div class="media-card-desc">Городские паблики Казахстана</div></div>
+        <div class="media-card-stats">${dbCount} ресурсов · ${fmt(dbSubs)} подписчиков</div>
+      </div>
+      <div class="media-card disabled" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
+        <div><div class="media-card-icon">✈️</div>
+        <div class="media-card-title">Telegram каналы</div>
+        <div class="media-card-desc">Новостные и тематические каналы</div></div>
+        <div class="media-card-badge">Скоро появится</div>
+      </div>
+      <div class="media-card disabled" style="background:linear-gradient(135deg,#e52d27,#b31217)">
+        <div><div class="media-card-icon">▶️</div>
+        <div class="media-card-title">YouTube</div>
+        <div class="media-card-desc">Видео-блогеры и каналы</div></div>
+        <div class="media-card-badge">Скоро появится</div>
+      </div>
+      <div class="media-card disabled" style="background:linear-gradient(135deg,#2c3e50,#4ca1af)">
+        <div><div class="media-card-icon">🎵</div>
+        <div class="media-card-title">TikTok</div>
+        <div class="media-card-desc">Короткие видео, блогеры</div></div>
+        <div class="media-card-badge">Скоро появится</div>
+      </div>
+      <div class="media-card" style="background:linear-gradient(135deg,#25d366,#128c7e)" onclick="switchView('whatsapp')">
+        <div><div class="media-card-icon">💬</div><div class="media-card-arrow">→</div>
+        <div class="media-card-title">WhatsApp рассылка</div>
+        <div class="media-card-desc">Рассылки по базе контактов</div></div>
+        <div class="media-card-stats">${leadsCount} контактов в базе</div>
+      </div>
+      <div class="media-card disabled" style="background:linear-gradient(135deg,#f7971e,#ffd200)">
+        <div><div class="media-card-icon">🏗️</div>
+        <div class="media-card-title">Наружная реклама</div>
+        <div class="media-card-desc">Билборды, ситилайты, LED</div></div>
+        <div class="media-card-badge">Скоро появится</div>
+      </div>
+    </div>
+  `;
+}
+
+// ===================== WHATSAPP TAB =====================
+const WA_NICHE_TEMPLATES = [
+  {niche:'🍽️ Рестораны/Кафе', text:'Здравствуйте! 👋\n\nМы — Pabliki.kz, городская медиасеть Казахстана. Помогаем ресторанам и кафе привлекать гостей через рекламу в Instagram-пабликах.\n\n🔥 Что мы предлагаем:\n✅ Размещение в 700+ городских пабликах\n✅ Охват от 50 000 до 500 000 подписчиков\n✅ Нативный формат — не выглядит как реклама\n✅ Результат уже в первые дни\n\n📊 Кейс: ресторан в Алматы получил 200+ бронирований за неделю с одного размещения.\n\nХотите узнать, сколько стоит реклама для вашего заведения? Подготовим бесплатный медиаплан! 📋'},
+  {niche:'💇 Салоны красоты', text:'Здравствуйте! 👋\n\nМы — Pabliki.kz, городская медиасеть. Помогаем салонам красоты привлекать клиентов через Instagram-паблики вашего города.\n\n💅 Почему это работает:\n✅ Ваша реклама в пабликах, которые читает ваша ЦА\n✅ Нативный формат — сохраняют и пересылают\n✅ Охват от 50К до 500К подписчиков\n✅ Стоимость от 15 000₸ за размещение\n\n📊 Кейс: салон красоты в Астане — 150 новых записей за 5 дней.\n\nПодготовим бесплатную подборку пабликов для вашего города?'},
+  {niche:'🏥 Медицинские центры', text:'Здравствуйте! 👋\n\nPabliki.kz — городская медиасеть Казахстана. Помогаем медицинским центрам привлекать пациентов через рекламу в Instagram-пабликах.\n\n🏥 Преимущества:\n✅ 700+ пабликов в 14 регионах КЗ\n✅ Аудитория 93М+ подписчиков\n✅ Нативный формат — доверие аудитории\n✅ Таргетинг по городу и категории\n\n📊 Медицинские центры получают в среднем 80-120 обращений с одной кампании.\n\nГотовы подготовить персональный медиаплан для вашей клиники!'},
+  {niche:'🏋️ Фитнес/Спорт', text:'Здравствуйте! 👋\n\nPabliki.kz — городская медиасеть. Помогаем фитнес-клубам и спортзалам привлекать новых клиентов.\n\n💪 Что предлагаем:\n✅ Реклама в городских Instagram-пабликах\n✅ Охват активной аудитории вашего города\n✅ Нативный формат — люди сохраняют и делятся\n✅ Идеально для акций и сезонных предложений\n\n📊 Фитнес-клуб в Караганде: +300 заявок на пробное занятие за 2 недели.\n\nХотите узнать стоимость? Подготовим медиаплан бесплатно!'},
+  {niche:'🎓 Образование', text:'Здравствуйте! 👋\n\nPabliki.kz — городская медиасеть. Помогаем образовательным центрам и школам привлекать учеников через Instagram-паблики.\n\n🎓 Почему паблики:\n✅ Мамочки и родители — основная аудитория городских пабликов\n✅ 700+ пабликов в 14 регионах\n✅ Нативный формат — высокое доверие\n✅ Отлично работает для набора на курсы и в школы\n\nПодготовим персональную подборку пабликов для вашего города?'},
+  {niche:'🏠 Недвижимость', text:'Здравствуйте! 👋\n\nPabliki.kz — городская медиасеть Казахстана. Помогаем застройщикам и агентствам недвижимости привлекать покупателей.\n\n🏠 Наши возможности:\n✅ 700+ городских Instagram-пабликов\n✅ Охват 93М+ подписчиков в 14 регионах\n✅ Идеально для ЖК, квартир, коммерческой недвижимости\n✅ Формат «городская новость» — максимальное доверие\n\n📊 Застройщик в Алматы: 500+ обращений за месяц с 3 размещений.\n\nГотовы обсудить стратегию продвижения ваших объектов!'}
+];
+
+let waSelectedTemplate = -1;
+let waSelectedNiche = '';
+let waCustomMessage = '';
+
+function getWAStats(){
+  try{return JSON.parse(localStorage.getItem('pabliki_wa_stats'))||{contacts:0,sent:0,delivered:0,replied:0};}catch(e){return {contacts:0,sent:0,delivered:0,replied:0};}
+}
+function saveWAStats(s){localStorage.setItem('pabliki_wa_stats',JSON.stringify(s));}
+function getWAHistory(){
+  try{return JSON.parse(localStorage.getItem('pabliki_wa_history'))||[];}catch(e){return [];}
+}
+function saveWAHistory(h){localStorage.setItem('pabliki_wa_history',JSON.stringify(h));}
+
+function scheduleWACampaign(){
+  const niche = waSelectedNiche || (waSelectedTemplate>=0?WA_NICHE_TEMPLATES[waSelectedTemplate].niche:'');
+  if(!niche){showToast('Выберите нишу');return;}
+  const msg = waCustomMessage || (waSelectedTemplate>=0?WA_NICHE_TEMPLATES[waSelectedTemplate].text:'');
+  if(!msg){showToast('Выберите шаблон или введите текст');return;}
+  const leads = getLeads();
+  const leadsCount = leads.length;
+  const history = getWAHistory();
+  history.unshift({
+    id:'wh_'+Date.now(),
+    date:new Date().toLocaleDateString('ru-RU'),
+    niche,
+    sent:leadsCount,
+    delivered:Math.round(leadsCount*0.85),
+    read:Math.round(leadsCount*0.6),
+    replied:Math.round(leadsCount*0.15),
+    status:'planned'
+  });
+  saveWAHistory(history);
+  const stats = getWAStats();
+  stats.contacts = leadsCount;
+  saveWAStats(stats);
+  showToast('✅ Рассылка запланирована!');
+  render();
+}
+
+function renderWhatsapp(app){
+  const stats = getWAStats();
+  const history = getWAHistory();
+  const leadsCount = getLeads().length;
+  stats.contacts = leadsCount;
+  const fmt = n => n.toLocaleString('ru-RU');
+
+  const templatesHtml = WA_NICHE_TEMPLATES.map((t,i)=>`
+    <div class="wa-tpl-card" style="${waSelectedTemplate===i?'border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)':''}">
+      <h5>${t.niche}</h5>
+      <div class="wa-tpl-preview">${t.text.replace(/</g,'&lt;').substring(0,200)}...</div>
+      <div class="wa-tpl-actions">
+        <button class="btn ${waSelectedTemplate===i?'btn-primary':'btn-ghost'}" style="font-size:11px;padding:7px 14px" onclick="waSelectedTemplate=${i};waSelectedNiche='${t.niche.replace(/'/g,"\\'")}';waCustomMessage=WA_NICHE_TEMPLATES[${i}].text;render()">
+          ${waSelectedTemplate===i?'✅ Выбран':'Использовать'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  const historyHtml = history.length ? history.map(h=>`
+    <div class="wa-history-row">
+      <span>${h.date}</span><span>${h.niche}</span><span>📤 ${h.sent}</span><span>✅ ${h.delivered}</span><span>👁 ${h.read}</span><span>💬 ${h.replied}</span>
+    </div>
+  `).join('') : '<div style="text-align:center;color:var(--text3);padding:20px;font-size:13px">Пока нет рассылок</div>';
+
+  const previewText = waSelectedTemplate>=0 ? WA_NICHE_TEMPLATES[waSelectedTemplate].text : (waCustomMessage || 'Выберите шаблон для предпросмотра...');
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+      <p>WhatsApp рассылка</p>
+    </div>
+
+    <div class="wa-stats">
+      <div class="wa-stat"><div class="wa-num" style="color:var(--primary)">${fmt(leadsCount)}</div><div class="wa-label">Контактов</div></div>
+      <div class="wa-stat"><div class="wa-num" style="color:var(--peach)">${fmt(stats.sent)}</div><div class="wa-label">Отправлено</div></div>
+      <div class="wa-stat"><div class="wa-num" style="color:var(--green)">${fmt(stats.delivered)}</div><div class="wa-label">Доставлено</div></div>
+      <div class="wa-stat"><div class="wa-num" style="color:#8b5cf6">${fmt(stats.replied)}</div><div class="wa-label">Ответили</div></div>
+    </div>
+
+    <div class="finance-card">
+      <h4>📝 Шаблоны сообщений</h4>
+      <div style="margin-top:12px">${templatesHtml}</div>
+    </div>
+
+    <div class="finance-card">
+      <h4>📊 История рассылок</h4>
+      <div style="margin-top:8px;font-size:11px;color:var(--text3);display:flex;justify-content:space-between;padding:4px 0;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;border-bottom:2px solid var(--border)">
+        <span>Дата</span><span>Ниша</span><span>Отпр.</span><span>Дост.</span><span>Прочит.</span><span>Ответ.</span>
+      </div>
+      ${historyHtml}
+    </div>
+
+    <div class="finance-card">
+      <h4>🚀 Новая рассылка</h4>
+      <div style="margin-top:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;display:block">Выберите нишу:</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+          ${WA_NICHE_TEMPLATES.map((t,i)=>`<button class="city-chip ${waSelectedNiche===t.niche?'active':''}" onclick="waSelectedNiche='${t.niche.replace(/'/g,"\\'")}';waSelectedTemplate=${i};waCustomMessage=WA_NICHE_TEMPLATES[${i}].text;render()">${t.niche}</button>`).join('')}
+        </div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;display:block">Предпросмотр сообщения:</label>
+        <div style="padding:12px;background:var(--surface);border-radius:var(--radius);font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-bottom:12px">${previewText.replace(/</g,'&lt;')}</div>
+        <button class="btn btn-primary" style="width:100%;background:#25d366" onclick="scheduleWACampaign()">📤 Запланировать рассылку</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderFinance(app){
   const fmt = n => n.toLocaleString('ru-RU');
   const allTasks = getAllTasks();
@@ -1370,6 +1576,11 @@ function renderSettings(app){
       <div class="finance-row"><span class="label">Осталось</span><span class="value" style="color:var(--peach)">${allTasks.length - done}</span></div>
     </div>
     <div class="finance-card">
+      <h4>📂 Разделы</h4>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:8px;text-align:left" onclick="switchView('roadmap')">🗺️ Roadmap — план роста</button>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:8px;text-align:left" onclick="switchView('finance')">💰 Экономика — юнит-экономика</button>
+    </div>
+    <div class="finance-card">
       <h4>🎨 Тема</h4>
       <div style="display:flex;gap:8px">
         <button class="btn ${getTheme()==='dark'?'btn-primary':'btn-ghost'}" style="flex:1" onclick="applyTheme('dark')">🌙 Тёмная</button>
@@ -1454,7 +1665,7 @@ function setFilter(f){ currentFilter = f; render(); }
 function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
-    const views = ['roadmap','selection','clients','finance','settings'];
+    const views = ['media','selection','clients','whatsapp','settings'];
     el.classList.toggle('active', views[i]===currentView);
   });
 }
