@@ -11,6 +11,8 @@
 <script src="pabliki-data.js?v=21"></script>
 <script src="telegram-data.js?v=21"></script>
 <script src="leads-data.js?v=21"></script>
+<script src="youtube-data.js?v=21"></script>
+<script src="tiktok-data.js?v=21"></script>
 <!-- leads-2gis.js загружается лениво при открытии вкладки Клиенты → База 2GIS -->
 <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
@@ -1063,11 +1065,13 @@ function saveState(){
 // ===================== RENDER =====================
 function render(){
   const app = document.getElementById('app');
-  if(currentView !== 'selection' && currentView !== 'telegram') app.classList.remove('wide-view');
+  if(currentView !== 'selection' && currentView !== 'telegram' && currentView !== 'youtube' && currentView !== 'tiktok') app.classList.remove('wide-view');
   if(currentView === 'media') renderMedia(app);
   else if(currentView === 'roadmap') renderRoadmap(app);
   else if(currentView === 'selection') renderSelection(app);
   else if(currentView === 'telegram') renderTelegram(app);
+  else if(currentView === 'youtube') renderYoutube(app);
+  else if(currentView === 'tiktok') renderTiktok(app);
   else if(currentView === 'clients') renderClients(app);
   else if(currentView === 'finance') renderFinance(app);
   else if(currentView === 'whatsapp') renderWhatsapp(app);
@@ -1275,17 +1279,17 @@ function renderMedia(app){
         <div class="media-card-desc">Новостные и тематические каналы</div></div>
         <div class="media-card-stats">${typeof TELEGRAM_DB!=='undefined'?TELEGRAM_DB.length+' каналов · '+fmt(TELEGRAM_DB.reduce((s,ch)=>s+(ch.s||0),0))+' подписчиков':'Данные загружаются...'}</div>
       </div>
-      <div class="media-card disabled" style="background:linear-gradient(135deg,#e52d27,#b31217)">
-        <div><div class="media-card-icon">▶️</div>
+      <div class="media-card" style="background:linear-gradient(135deg,#e52d27,#b31217)" onclick="switchView('youtube')">
+        <div><div class="media-card-icon">▶️</div><div class="media-card-arrow">→</div>
         <div class="media-card-title">YouTube</div>
         <div class="media-card-desc">Видео-блогеры и каналы</div></div>
-        <div class="media-card-badge">Скоро появится</div>
+        <div class="media-card-stats">${typeof YOUTUBE_DB!=='undefined'?YOUTUBE_DB.length+' блогеров · '+fmt(YOUTUBE_DB.reduce((s,b)=>s+(b.s||0),0))+' подписчиков':'Данные загружаются...'}</div>
       </div>
-      <div class="media-card disabled" style="background:linear-gradient(135deg,#2c3e50,#4ca1af)">
-        <div><div class="media-card-icon">🎵</div>
+      <div class="media-card" style="background:linear-gradient(135deg,#2c3e50,#4ca1af)" onclick="switchView('tiktok')">
+        <div><div class="media-card-icon">🎵</div><div class="media-card-arrow">→</div>
         <div class="media-card-title">TikTok</div>
         <div class="media-card-desc">Короткие видео, блогеры</div></div>
-        <div class="media-card-badge">Скоро появится</div>
+        <div class="media-card-stats">${typeof TIKTOK_DB!=='undefined'?TIKTOK_DB.length+' блогеров · '+fmt(TIKTOK_DB.reduce((s,b)=>s+(b.s||0),0))+' подписчиков':'Данные загружаются...'}</div>
       </div>
       <div class="media-card" style="background:linear-gradient(135deg,#25d366,#128c7e)" onclick="switchView('whatsapp')">
         <div><div class="media-card-icon">💬</div><div class="media-card-arrow">→</div>
@@ -1669,7 +1673,7 @@ function switchView(view){ currentView = view; render(); window.scrollTo(0,0); }
 function updateNav(){
   document.querySelectorAll('.nav-item').forEach((el,i) => {
     const views = ['media','roadmap','selection','telegram','clients','settings'];
-    el.classList.toggle('active', views[i]===currentView);
+    el.classList.toggle('active', views[i]===currentView || (currentView==='youtube'&&views[i]==='media') || (currentView==='tiktok'&&views[i]==='media') || (currentView==='whatsapp'&&views[i]==='media'));
   });
 }
 
@@ -2769,6 +2773,26 @@ let tgSortField = 's';
 let tgSortDir = -1;
 let tgViewMode = 'cards'; // 'cards' or 'table'
 
+// ===================== YOUTUBE STATE =====================
+let ytSelected = new Set();
+let ytCities = new Set();
+let ytCats = new Set();
+let ytSearch = '';
+let ytShowCount = 30;
+let ytSortField = 's';
+let ytSortDir = -1;
+let ytViewMode = 'cards';
+
+// ===================== TIKTOK STATE =====================
+let ttSelected = new Set();
+let ttCities = new Set();
+let ttCats = new Set();
+let ttSearch = '';
+let ttShowCount = 30;
+let ttSortField = 's';
+let ttSortDir = -1;
+let ttViewMode = 'cards';
+
 // Restore from localStorage
 (function restoreSelection(){
   try {
@@ -3578,6 +3602,270 @@ function renderTelegram(app){
     ${contentHTML}
 
     ${hasMore?`<button onclick="tgShowCount+=30;render()" class="btn btn-primary" style="width:100%;margin:12px 0">Показать ещё (+${Math.min(30,filtered.length-tgShowCount)})</button>`:''}
+  `;
+}
+
+// ===================== YOUTUBE TAB =====================
+function getFilteredYoutube(){
+  if(typeof YOUTUBE_DB==='undefined'||!YOUTUBE_DB) return [];
+  let list = YOUTUBE_DB.filter(ch=>{
+    if(ytCities.size && !ytCities.has(ch.c)) return false;
+    if(ytCats.size && !ytCats.has(ch.t)) return false;
+    if(ytSearch){
+      const q=ytSearch.toLowerCase();
+      if(!(ch.h||'').toLowerCase().includes(q) && !(ch.n||ch.name||ch.h||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  list.sort((a,b)=>{
+    let va=a[ytSortField], vb=b[ytSortField];
+    if(typeof va==='string') return va.localeCompare(vb,'ru')*ytSortDir;
+    return ((va||0)-(vb||0))*ytSortDir;
+  });
+  return list;
+}
+
+function toggleYtSel(h){
+  if(ytSelected.has(h)) ytSelected.delete(h); else ytSelected.add(h);
+  render();
+}
+
+function ytSetSort(field){
+  if(ytSortField===field) ytSortDir=ytSortDir===1?-1:1;
+  else { ytSortField=field; ytSortDir=field==='n'||field==='h'?1:-1; }
+  render();
+}
+
+function renderYoutube(app){
+  if(typeof YOUTUBE_DB==='undefined'||!YOUTUBE_DB||!YOUTUBE_DB.length){
+    app.innerHTML = `<div class="header"><img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px"><img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px"><p>YouTube блогеры</p></div><div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:40px;margin-bottom:16px">▶️</div><div style="font-size:16px;font-weight:600">Данные загружаются...</div><div style="font-size:13px;margin-top:8px">Файл youtube-data.js ещё не подключен</div></div>`;
+    return;
+  }
+
+  const appEl=document.getElementById('app');
+  if(appEl){ if(ytViewMode==='cards') appEl.classList.add('wide-view'); else appEl.classList.remove('wide-view'); }
+
+  const DB=YOUTUBE_DB;
+  const CITIES=[...new Set(DB.map(ch=>ch.c).filter(Boolean))].sort();
+  const CATS=[...new Set(DB.map(ch=>ch.t).filter(Boolean))].sort();
+  const filtered=getFilteredYoutube();
+  const shown=filtered.slice(0,ytShowCount);
+  const hasMore=filtered.length>ytShowCount;
+
+  const totalChannels=DB.length;
+  const totalCities=new Set(DB.map(ch=>ch.c)).size;
+  const totalSubs=DB.reduce((s,ch)=>s+(ch.s||0),0);
+  const avgViews=DB.length?Math.round(DB.reduce((s,ch)=>s+(ch.v||0),0)/DB.length):0;
+
+  const allSel=DB.filter(ch=>ytSelected.has(ch.h));
+  const selSubs=allSel.reduce((s,ch)=>s+(ch.s||0),0);
+
+  const fmt=n=>n.toLocaleString('ru-RU');
+
+  const cityChips=CITIES.map(c=>`<button class="city-chip ${ytCities.has(c)?'active':''}" onclick="ytCities.has('${c.replace(/'/g,"\\'")}')?ytCities.delete('${c.replace(/'/g,"\\'")}'):ytCities.add('${c.replace(/'/g,"\\'")}');ytShowCount=30;render()">${c}</button>`).join('');
+  const catChips=CATS.map(c=>`<button class="city-chip ${ytCats.has(c)?'active':''}" onclick="ytCats.has('${c.replace(/'/g,"\\'")}')?ytCats.delete('${c.replace(/'/g,"\\'")}'):ytCats.add('${c.replace(/'/g,"\\'")}');ytShowCount=30;render()">${c}</button>`).join('');
+
+  const sortBtns=[['s','Подписчики'],['v','Просмотры'],['n','Название']].map(([f,l])=>
+    `<button class="sel-sort-btn ${ytSortField===f?'active':''}" onclick="ytSetSort('${f}')">${l} ${ytSortField===f?(ytSortDir===1?'▲':'▼'):''}</button>`
+  ).join('');
+
+  let contentHTML='';
+  if(ytViewMode==='cards'){
+    const cards=shown.map(ch=>{
+      const checked=ytSelected.has(ch.h);
+      const letter=(ch.h||'?')[0].toUpperCase();
+      const name=ch.name||ch.n||('@'+ch.h);
+      return `<div class="sel-card ${checked?'selected':''}" onclick="toggleYtSel('${ch.h}')">
+        <div class="sel-card-check"><div class="sel-check ${checked?'checked':''}"></div></div>
+        <div class="sel-card-top">
+          <div class="sel-card-avatar" style="${_avatarGrad(ch.h)}">${letter}</div>
+          <div class="sel-card-info">
+            <div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+            <a class="sel-card-handle" href="${ch.l||('https://youtube.com/@'+ch.h)}" target="_blank" onclick="event.stopPropagation()">@${ch.h}</a>
+            <div class="sel-card-sub">${ch.c||''} · 🎬 ${ch.t||''}</div>
+          </div>
+        </div>
+        <div class="sel-card-body">
+          <span class="sel-card-subs">👥 ${_tgFmt(ch.s||0)}</span>
+          ${ch.v?'<span class="sel-card-price" style="color:var(--accent)">👁 '+_tgFmt(ch.v)+'</span>':''}
+        </div>
+      </div>`;
+    }).join('');
+    contentHTML=`<div class="sel-sort-bar"><span>Сортировка:</span>${sortBtns}</div><div class="sel-cards-grid">${cards}</div>`;
+  } else {
+    const sa=(f)=>ytSortField===f?(ytSortDir===1?'▲':'▼'):'';
+    const rows=shown.map(ch=>{
+      const checked=ytSelected.has(ch.h);
+      const name=ch.name||ch.n||('@'+ch.h);
+      return `<tr><td><div class="sel-check ${checked?'checked':''}" onclick="toggleYtSel('${ch.h}')"></div></td><td style="font-weight:600">${name}</td><td><a class="ig-link" href="${ch.l||('https://youtube.com/@'+ch.h)}" target="_blank">@${ch.h}</a></td><td style="font-size:10.5px">${ch.c||''}</td><td style="font-size:10px">${ch.t||''}</td><td class="num">${fmt(ch.s||0)}</td><td class="num">${ch.v?fmt(ch.v):'-'}</td></tr>`;
+    }).join('');
+    contentHTML=`<div class="table-wrap"><table class="sel-table"><thead><tr><th></th><th class="sortable" onclick="ytSetSort('n')">Название ${sa('n')}</th><th class="sortable" onclick="ytSetSort('h')">Handle ${sa('h')}</th><th class="sortable" onclick="ytSetSort('c')">Город ${sa('c')}</th><th>Кат.</th><th class="num sortable" onclick="ytSetSort('s')">Подп. ${sa('s')}</th><th class="num sortable" onclick="ytSetSort('v')">Просм. ${sa('v')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+      <p>YouTube блогеры Казахстана</p>
+    </div>
+
+    <div class="sel-stats-bar">
+      <div class="sel-stat"><div class="sel-stat-num">${totalChannels}</div><div class="sel-stat-label">▶️ Блогеров</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${totalCities}</div><div class="sel-stat-label">🏙 Городов</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${_tgFmt(totalSubs)}</div><div class="sel-stat-label">👥 Подписчики</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${_tgFmt(avgViews)}</div><div class="sel-stat-label">👁 Ср. просмотры</div></div>
+    </div>
+
+    <div class="sel-view-toggle">
+      <div class="sel-view-btn ${ytViewMode==='cards'?'active':''}" onclick="ytViewMode='cards';render()">🃏 Карточки</div>
+      <div class="sel-view-btn ${ytViewMode==='table'?'active':''}" onclick="ytViewMode='table';render()">📊 Таблица</div>
+    </div>
+
+    <input type="text" class="ig-search" placeholder="🔍 Поиск по @handle / названию..." value="${ytSearch}" oninput="ytSearch=this.value;ytShowCount=30;render()">
+
+    ${CATS.length?`<div class="filter-section"><h4>📂 Категория</h4><div class="city-chips"><button class="city-chip ${ytCats.size===0?'active':''}" onclick="ytCats.clear();ytShowCount=30;render()">Все</button>${catChips}</div></div>`:''}
+
+    ${CITIES.length?`<div class="filter-section"><h4>🏙️ Город</h4><div class="city-chips"><button class="city-chip ${ytCities.size===0?'active':''}" onclick="ytCities.clear();ytShowCount=30;render()">Все</button>${cityChips}</div></div>`:''}
+
+    <div class="sel-count">Найдено: <strong>${filtered.length}</strong> · Выбрано: <strong>${allSel.length}</strong></div>
+
+    ${allSel.length>0?`<div class="sel-sticky"><div class="sel-total"><div class="sel-total-row"><span class="label">Выбрано блогеров</span><span class="val">${allSel.length}</span></div><div class="sel-total-row"><span class="label">Суммарные подписчики</span><span class="val">${fmt(selSubs)}</span></div></div><div class="sel-actions"><button class="btn btn-ghost" onclick="ytSelected.clear();render()">✕ Сбросить</button></div></div>`:''}
+
+    ${contentHTML}
+
+    ${hasMore?`<button onclick="ytShowCount+=30;render()" class="btn btn-primary" style="width:100%;margin:12px 0">Показать ещё (+${Math.min(30,filtered.length-ytShowCount)})</button>`:''}
+  `;
+}
+
+// ===================== TIKTOK TAB =====================
+function getFilteredTiktok(){
+  if(typeof TIKTOK_DB==='undefined'||!TIKTOK_DB) return [];
+  let list = TIKTOK_DB.filter(ch=>{
+    if(ttCities.size && !ttCities.has(ch.c)) return false;
+    if(ttCats.size && !ttCats.has(ch.t)) return false;
+    if(ttSearch){
+      const q=ttSearch.toLowerCase();
+      if(!(ch.h||'').toLowerCase().includes(q) && !(ch.n||ch.name||ch.h||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  list.sort((a,b)=>{
+    let va=a[ttSortField], vb=b[ttSortField];
+    if(typeof va==='string') return va.localeCompare(vb,'ru')*ttSortDir;
+    return ((va||0)-(vb||0))*ttSortDir;
+  });
+  return list;
+}
+
+function toggleTtSel(h){
+  if(ttSelected.has(h)) ttSelected.delete(h); else ttSelected.add(h);
+  render();
+}
+
+function ttSetSort(field){
+  if(ttSortField===field) ttSortDir=ttSortDir===1?-1:1;
+  else { ttSortField=field; ttSortDir=field==='n'||field==='h'?1:-1; }
+  render();
+}
+
+function renderTiktok(app){
+  if(typeof TIKTOK_DB==='undefined'||!TIKTOK_DB||!TIKTOK_DB.length){
+    app.innerHTML = `<div class="header"><img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px"><img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px"><p>TikTok блогеры</p></div><div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:40px;margin-bottom:16px">🎵</div><div style="font-size:16px;font-weight:600">Данные загружаются...</div><div style="font-size:13px;margin-top:8px">Файл tiktok-data.js ещё не подключен</div></div>`;
+    return;
+  }
+
+  const appEl=document.getElementById('app');
+  if(appEl){ if(ttViewMode==='cards') appEl.classList.add('wide-view'); else appEl.classList.remove('wide-view'); }
+
+  const DB=TIKTOK_DB;
+  const CITIES=[...new Set(DB.map(ch=>ch.c).filter(Boolean))].sort();
+  const CATS=[...new Set(DB.map(ch=>ch.t).filter(Boolean))].sort();
+  const filtered=getFilteredTiktok();
+  const shown=filtered.slice(0,ttShowCount);
+  const hasMore=filtered.length>ttShowCount;
+
+  const totalChannels=DB.length;
+  const totalCities=new Set(DB.map(ch=>ch.c)).size;
+  const totalSubs=DB.reduce((s,ch)=>s+(ch.s||0),0);
+  const avgViews=DB.length?Math.round(DB.reduce((s,ch)=>s+(ch.v||0),0)/DB.length):0;
+
+  const allSel=DB.filter(ch=>ttSelected.has(ch.h));
+  const selSubs=allSel.reduce((s,ch)=>s+(ch.s||0),0);
+
+  const fmt=n=>n.toLocaleString('ru-RU');
+
+  const cityChips=CITIES.map(c=>`<button class="city-chip ${ttCities.has(c)?'active':''}" onclick="ttCities.has('${c.replace(/'/g,"\\'")}')?ttCities.delete('${c.replace(/'/g,"\\'")}'):ttCities.add('${c.replace(/'/g,"\\'")}');ttShowCount=30;render()">${c}</button>`).join('');
+  const catChips=CATS.map(c=>`<button class="city-chip ${ttCats.has(c)?'active':''}" onclick="ttCats.has('${c.replace(/'/g,"\\'")}')?ttCats.delete('${c.replace(/'/g,"\\'")}'):ttCats.add('${c.replace(/'/g,"\\'")}');ttShowCount=30;render()">${c}</button>`).join('');
+
+  const sortBtns=[['s','Подписчики'],['v','Просмотры'],['n','Название']].map(([f,l])=>
+    `<button class="sel-sort-btn ${ttSortField===f?'active':''}" onclick="ttSetSort('${f}')">${l} ${ttSortField===f?(ttSortDir===1?'▲':'▼'):''}</button>`
+  ).join('');
+
+  let contentHTML='';
+  if(ttViewMode==='cards'){
+    const cards=shown.map(ch=>{
+      const checked=ttSelected.has(ch.h);
+      const letter=(ch.h||'?')[0].toUpperCase();
+      const name=ch.name||ch.n||('@'+ch.h);
+      return `<div class="sel-card ${checked?'selected':''}" onclick="toggleTtSel('${ch.h}')">
+        <div class="sel-card-check"><div class="sel-check ${checked?'checked':''}"></div></div>
+        <div class="sel-card-top">
+          <div class="sel-card-avatar" style="${_avatarGrad(ch.h)}">${letter}</div>
+          <div class="sel-card-info">
+            <div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+            <a class="sel-card-handle" href="${ch.l||('https://tiktok.com/@'+ch.h)}" target="_blank" onclick="event.stopPropagation()">@${ch.h}</a>
+            <div class="sel-card-sub">${ch.c||''} · 🎵 ${ch.t||''}</div>
+          </div>
+        </div>
+        <div class="sel-card-body">
+          <span class="sel-card-subs">👥 ${_tgFmt(ch.s||0)}</span>
+          ${ch.v?'<span class="sel-card-price" style="color:var(--accent)">👁 '+_tgFmt(ch.v)+'</span>':''}
+        </div>
+      </div>`;
+    }).join('');
+    contentHTML=`<div class="sel-sort-bar"><span>Сортировка:</span>${sortBtns}</div><div class="sel-cards-grid">${cards}</div>`;
+  } else {
+    const sa=(f)=>ttSortField===f?(ttSortDir===1?'▲':'▼'):'';
+    const rows=shown.map(ch=>{
+      const checked=ttSelected.has(ch.h);
+      const name=ch.name||ch.n||('@'+ch.h);
+      return `<tr><td><div class="sel-check ${checked?'checked':''}" onclick="toggleTtSel('${ch.h}')"></div></td><td style="font-weight:600">${name}</td><td><a class="ig-link" href="${ch.l||('https://tiktok.com/@'+ch.h)}" target="_blank">@${ch.h}</a></td><td style="font-size:10.5px">${ch.c||''}</td><td style="font-size:10px">${ch.t||''}</td><td class="num">${fmt(ch.s||0)}</td><td class="num">${ch.v?fmt(ch.v):'-'}</td></tr>`;
+    }).join('');
+    contentHTML=`<div class="table-wrap"><table class="sel-table"><thead><tr><th></th><th class="sortable" onclick="ttSetSort('n')">Название ${sa('n')}</th><th class="sortable" onclick="ttSetSort('h')">Handle ${sa('h')}</th><th class="sortable" onclick="ttSetSort('c')">Город ${sa('c')}</th><th>Кат.</th><th class="num sortable" onclick="ttSetSort('s')">Подп. ${sa('s')}</th><th class="num sortable" onclick="ttSetSort('v')">Просм. ${sa('v')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki" style="height:36px">
+      <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki" style="height:36px">
+      <p>TikTok блогеры Казахстана</p>
+    </div>
+
+    <div class="sel-stats-bar">
+      <div class="sel-stat"><div class="sel-stat-num">${totalChannels}</div><div class="sel-stat-label">🎵 Блогеров</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${totalCities}</div><div class="sel-stat-label">🏙 Городов</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${_tgFmt(totalSubs)}</div><div class="sel-stat-label">👥 Подписчики</div></div>
+      <div class="sel-stat"><div class="sel-stat-num">${_tgFmt(avgViews)}</div><div class="sel-stat-label">👁 Ср. просмотры</div></div>
+    </div>
+
+    <div class="sel-view-toggle">
+      <div class="sel-view-btn ${ttViewMode==='cards'?'active':''}" onclick="ttViewMode='cards';render()">🃏 Карточки</div>
+      <div class="sel-view-btn ${ttViewMode==='table'?'active':''}" onclick="ttViewMode='table';render()">📊 Таблица</div>
+    </div>
+
+    <input type="text" class="ig-search" placeholder="🔍 Поиск по @handle / названию..." value="${ttSearch}" oninput="ttSearch=this.value;ttShowCount=30;render()">
+
+    ${CATS.length?`<div class="filter-section"><h4>📂 Категория</h4><div class="city-chips"><button class="city-chip ${ttCats.size===0?'active':''}" onclick="ttCats.clear();ttShowCount=30;render()">Все</button>${catChips}</div></div>`:''}
+
+    ${CITIES.length?`<div class="filter-section"><h4>🏙️ Город</h4><div class="city-chips"><button class="city-chip ${ttCities.size===0?'active':''}" onclick="ttCities.clear();ttShowCount=30;render()">Все</button>${cityChips}</div></div>`:''}
+
+    <div class="sel-count">Найдено: <strong>${filtered.length}</strong> · Выбрано: <strong>${allSel.length}</strong></div>
+
+    ${allSel.length>0?`<div class="sel-sticky"><div class="sel-total"><div class="sel-total-row"><span class="label">Выбрано блогеров</span><span class="val">${allSel.length}</span></div><div class="sel-total-row"><span class="label">Суммарные подписчики</span><span class="val">${fmt(selSubs)}</span></div></div><div class="sel-actions"><button class="btn btn-ghost" onclick="ttSelected.clear();render()">✕ Сбросить</button></div></div>`:''}
+
+    ${contentHTML}
+
+    ${hasMore?`<button onclick="ttShowCount+=30;render()" class="btn btn-primary" style="width:100%;margin:12px 0">Показать ещё (+${Math.min(30,filtered.length-ttShowCount)})</button>`:''}
   `;
 }
 
