@@ -90,6 +90,7 @@ body{min-height:100vh;background:var(--bg);padding:0;overflow-x:hidden;padding-t
 #splash p{color:var(--text2);font-size:12px;margin-top:8px}
 
 #app{max-width:480px;margin:0 auto;padding:24px 16px;transition:max-width .3s}
+#app.wide-view{max-width:960px}
 
 /* ======================== HEADER ======================== */
 .header{text-align:center;padding:16px 0 20px}
@@ -266,6 +267,39 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .table-wrap{overflow-x:auto;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);max-height:50vh;overflow-y:auto}
 .sel-count{font-size:12px;color:var(--text2);margin-bottom:8px;text-align:center}
 .sel-count strong{color:var(--primary)}
+
+/* ======================== SELECTION CARDS (MediaMap style) ======================== */
+.sel-stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.sel-stat{text-align:center;padding:14px 8px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.sel-stat .sel-stat-num{font-size:20px;font-weight:800;color:var(--primary);line-height:1.2}
+.sel-stat .sel-stat-label{font-size:9px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}
+.sel-view-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.sel-view-btn{flex:1;padding:8px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;transition:all .2s}
+.sel-view-btn.active{background:var(--primary);color:var(--primary-fg)}
+.sel-cards-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+.sel-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;position:relative;transition:border-color .15s,box-shadow .15s;box-shadow:var(--shadow)}
+.sel-card.selected{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.sel-card-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.sel-card-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:0.5px}
+.sel-card-info{flex:1;min-width:0}
+.sel-card-handle{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-card-handle:hover{text-decoration:underline}
+.sel-card-sub{font-size:11px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-card-check{position:absolute;top:12px;right:12px}
+.sel-card-body{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+.sel-card-subs{font-size:18px;font-weight:800;color:var(--text)}
+.sel-card-price{font-size:15px;font-weight:700;color:var(--green)}
+.sel-card-cost{font-size:12px;color:var(--text3)}
+.sel-card-reach{font-size:11px;color:var(--text2);margin-top:6px}
+.sel-card-margin{font-size:12px;font-weight:700;margin-top:4px}
+.sel-card-delete{position:absolute;bottom:12px;right:12px;cursor:pointer;font-size:11px;color:var(--red);opacity:0.5}
+.sel-card-delete:hover{opacity:1}
+.sel-sort-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.sel-sort-bar span{font-size:11px;color:var(--text2);font-weight:600}
+.sel-sort-btn{padding:5px 10px;border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.sel-sort-btn.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+@media(min-width:600px){.sel-cards-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.sel-cards-grid{grid-template-columns:repeat(3,1fr)}}
 
 /* ======================== LOGO ======================== */
 .header-logo{height:40px;width:auto}
@@ -997,6 +1031,7 @@ function saveState(){
 // ===================== RENDER =====================
 function render(){
   const app = document.getElementById('app');
+  if(currentView !== 'selection') app.classList.remove('wide-view');
   if(currentView === 'roadmap') renderRoadmap(app);
   else if(currentView === 'selection') renderSelection(app);
   else if(currentView === 'clients') renderClients(app);
@@ -2508,6 +2543,7 @@ let igSearch = '';
 let selSort = {col: 's', dir: 'desc'};
 let selShowOnly = false;
 let selShowCount = 100;
+let selViewMode = 'cards'; // 'cards' or 'table'
 
 // Restore from localStorage
 (function restoreSelection(){
@@ -2726,11 +2762,30 @@ function getFilteredPabliki(){
   return sortPabliki(list);
 }
 
+function _fmtSubs(n){
+  if(n>=1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  if(n>=1000) return (n/1000).toFixed(n>=100000?0:1).replace(/\.0$/,'')+'K';
+  return String(n);
+}
+function _avatarGrad(handle){
+  const colors=[
+    ['#667eea','#764ba2'],['#f093fb','#f5576c'],['#4facfe','#00f2fe'],
+    ['#43e97b','#38f9d7'],['#fa709a','#fee140'],['#a18cd1','#fbc2eb'],
+    ['#fccb90','#d57eeb'],['#e0c3fc','#8ec5fc'],['#f5576c','#ff6a88'],
+    ['#667eea','#00c6fb']
+  ];
+  const idx = (handle.charCodeAt(0)||0) % colors.length;
+  return `background:linear-gradient(135deg,${colors[idx][0]},${colors[idx][1]})`;
+}
+
 function renderSelection(app){
-  // Save focused element info for focus restore
   const wasFocused = document.activeElement;
   const focusedId = wasFocused ? wasFocused.id : null;
   const cursorPos = wasFocused && wasFocused.selectionStart != null ? wasFocused.selectionStart : null;
+
+  // Widen app for cards view
+  const appEl = document.getElementById('app');
+  if(appEl){ if(selViewMode==='cards') appEl.classList.add('wide-view'); else appEl.classList.remove('wide-view'); }
 
   const filtered = getFilteredPabliki();
   const allSelected = PABLIKI_DB.filter(p => selSelected.has(p.ig));
@@ -2743,6 +2798,18 @@ function renderSelection(app){
   const zeroCostCount = allSelected.filter(p => p.co === 0).length;
   
   const fmt = n => n.toLocaleString('ru-RU');
+
+  // --- Stats bar ---
+  const dbTotal = PABLIKI_DB.length;
+  const dbCities = new Set(PABLIKI_DB.map(p=>p.c)).size;
+  const dbSubs = PABLIKI_DB.reduce((s,p)=>s+p.s,0);
+  const dbReach = Math.round(dbSubs * 0.05);
+  const statsBar = `<div class="sel-stats-bar">
+    <div class="sel-stat"><div class="sel-stat-num">${dbTotal}</div><div class="sel-stat-label">📊 Пабликов</div></div>
+    <div class="sel-stat"><div class="sel-stat-num">${dbCities}</div><div class="sel-stat-label">🏙 Городов</div></div>
+    <div class="sel-stat"><div class="sel-stat-num">${_fmtSubs(dbSubs)}</div><div class="sel-stat-label">👥 Аудитория</div></div>
+    <div class="sel-stat"><div class="sel-stat-num">${_fmtSubs(dbReach)}</div><div class="sel-stat-label">👁 Охват</div></div>
+  </div>`;
   
   const MAIN_CITIES = ['Алматы','Астана','Шымкент','Караганда','Уральск','Павлодар','Петропавловск','Семей','Актобе','Атырау','Усть-Каменоргорск','Кокшетау','Актау','Костанай','Тараз','Жезказган','Кызылорда','Талдыкорган','Крупные (РК)','Регионы'];
   const allCitiesSet = [...new Set(PABLIKI_DB.map(p=>p.c))].sort((a,b)=>a.localeCompare(b,'ru'));
@@ -2762,46 +2829,89 @@ function renderSelection(app){
     `<button class="city-chip ${selCats.has(c)?'active':''}" onclick="if(selCats.has('${c}')){selCats.delete('${c}')}else{selCats.add('${c}')};render()">${(catIcons[c]||'')+' '+c}</button>`)
   ].join('');
 
-  let tableHead, tableRows;
-  
   const shown = filtered.slice(0, selShowCount);
   const hasMore = filtered.length > selShowCount;
-  
   const ci = catIcons;
-  
-  if(selMode === 'client'){
-    tableHead = `<tr><th></th><th class="sortable" onclick="toggleSort('c')">Город${sortArrow('c')}</th><th class="sortable" onclick="toggleSort('ig')">Instagram${sortArrow('ig')}</th><th class="sortable" onclick="toggleSort('t')">Кат.${sortArrow('t')}</th><th class="num sortable" onclick="toggleSort('s')">Подп.${sortArrow('s')}</th><th class="num sortable" onclick="toggleSort('p')">Цена${sortArrow('p')}</th></tr>`;
-    tableRows = shown.map(p => {
+
+  // --- Table view (original) ---
+  let tableHTML = '';
+  if(selViewMode === 'table'){
+    let tableHead, tableRows;
+    if(selMode === 'client'){
+      tableHead = `<tr><th></th><th class="sortable" onclick="toggleSort('c')">Город${sortArrow('c')}</th><th class="sortable" onclick="toggleSort('ig')">Instagram${sortArrow('ig')}</th><th class="sortable" onclick="toggleSort('t')">Кат.${sortArrow('t')}</th><th class="num sortable" onclick="toggleSort('s')">Подп.${sortArrow('s')}</th><th class="num sortable" onclick="toggleSort('p')">Цена${sortArrow('p')}</th></tr>`;
+      tableRows = shown.map(p => {
+        const checked = selSelected.has(p.ig);
+        return `<tr>
+          <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
+          <td style="font-size:10.5px">${p.c}</td>
+          <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a>${p.custom?'<span onclick="deletePablik(\''+p.ig+'\')" style="cursor:pointer;margin-left:4px;font-size:10px;color:var(--red);opacity:0.6">✕</span>':''}</td>
+          <td style="font-size:10px">${ci[p.t]||''}</td>
+          <td class="num">${fmt(p.s)}</td>
+          <td class="num">${fmt(p.p)}₸</td>
+        </tr>`;
+      }).join('');
+    } else {
+      tableHead = `<tr><th></th><th class="sortable" onclick="toggleSort('c')">Город${sortArrow('c')}</th><th class="sortable" onclick="toggleSort('ig')">Instagram${sortArrow('ig')}</th><th class="sortable" onclick="toggleSort('t')">Кат.${sortArrow('t')}</th><th class="num sortable" onclick="toggleSort('s')">Подп.${sortArrow('s')}</th><th class="num sortable" onclick="toggleSort('co')">Себест.${sortArrow('co')}</th><th class="num sortable" onclick="toggleSort('p')">Цена${sortArrow('p')}</th><th class="num">Маржа</th><th class="num">%</th></tr>`;
+      tableRows = shown.map(p => {
+        const checked = selSelected.has(p.ig);
+        const marginPct = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
+        const marginT = p.p - p.co;
+        const mColor = marginPct >= 50 ? 'var(--green)' : marginPct >= 30 ? 'var(--yellow)' : 'var(--red)';
+        const zeroCostIcon = p.co === 0 ? ' ⚠️' : '';
+        return `<tr>
+          <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
+          <td style="font-size:10.5px">${p.c}</td>
+          <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a>${p.custom?'<span onclick="deletePablik(\''+p.ig+'\')" style="cursor:pointer;margin-left:4px;font-size:10px;color:var(--red);opacity:0.6">✕</span>':''}</td>
+          <td style="font-size:10px">${ci[p.t]||''}</td>
+          <td class="num">${fmt(p.s)}</td>
+          <td class="num">${fmt(p.co)}₸${zeroCostIcon}</td>
+          <td class="num">${fmt(p.p)}₸</td>
+          <td class="num" style="color:${mColor};font-weight:600">${fmt(marginT)}₸</td>
+          <td class="num" style="color:${mColor};font-weight:700">${marginPct}%</td>
+        </tr>`;
+      }).join('');
+    }
+    tableHTML = `<div class="table-wrap"><table class="sel-table"><thead>${tableHead}</thead><tbody>${tableRows}</tbody></table></div>`;
+  }
+
+  // --- Cards view ---
+  let cardsHTML = '';
+  if(selViewMode === 'cards'){
+    const sortBtns = [['s','Подписчики'],['p','Цена'],['c','Город'],['ig','Handle']].map(([col,label])=>
+      `<button class="sel-sort-btn ${selSort.col===col?'active':''}" onclick="toggleSort('${col}')">${label} ${selSort.col===col?(selSort.dir==='asc'?'▲':'▼'):''}</button>`
+    ).join('');
+
+    const cards = shown.map(p => {
       const checked = selSelected.has(p.ig);
-      return `<tr>
-        <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
-        <td style="font-size:10.5px">${p.c}</td>
-        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a>${p.custom?'<span onclick="deletePablik(\''+p.ig+'\')" style="cursor:pointer;margin-left:4px;font-size:10px;color:var(--red);opacity:0.6">✕</span>':''}</td>
-        <td style="font-size:10px">${ci[p.t]||''}</td>
-        <td class="num">${fmt(p.s)}</td>
-        <td class="num">${fmt(p.p)}₸</td>
-      </tr>`;
-    }).join('');
-  } else {
-    tableHead = `<tr><th></th><th class="sortable" onclick="toggleSort('c')">Город${sortArrow('c')}</th><th class="sortable" onclick="toggleSort('ig')">Instagram${sortArrow('ig')}</th><th class="sortable" onclick="toggleSort('t')">Кат.${sortArrow('t')}</th><th class="num sortable" onclick="toggleSort('s')">Подп.${sortArrow('s')}</th><th class="num sortable" onclick="toggleSort('co')">Себест.${sortArrow('co')}</th><th class="num sortable" onclick="toggleSort('p')">Цена${sortArrow('p')}</th><th class="num">Маржа</th><th class="num">%</th></tr>`;
-    tableRows = shown.map(p => {
-      const checked = selSelected.has(p.ig);
+      const letter = (p.ig[0]||'?').toUpperCase();
+      const reachLo = Math.round(p.s*0.03/1000);
+      const reachHi = Math.round(p.s*0.07/1000);
       const marginPct = p.p > 0 ? Math.round((p.p - p.co) / p.p * 100) : 0;
-      const marginT = p.p - p.co;
       const mColor = marginPct >= 50 ? 'var(--green)' : marginPct >= 30 ? 'var(--yellow)' : 'var(--red)';
-      const zeroCostIcon = p.co === 0 ? ' ⚠️' : '';
-      return `<tr>
-        <td><div class="sel-check ${checked?'checked':''}" onclick="toggleSel('${p.ig}')"></div></td>
-        <td style="font-size:10.5px">${p.c}</td>
-        <td><a class="ig-link" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank">@${p.ig}</a>${p.custom?'<span onclick="deletePablik(\''+p.ig+'\')" style="cursor:pointer;margin-left:4px;font-size:10px;color:var(--red);opacity:0.6">✕</span>':''}</td>
-        <td style="font-size:10px">${ci[p.t]||''}</td>
-        <td class="num">${fmt(p.s)}</td>
-        <td class="num">${fmt(p.co)}₸${zeroCostIcon}</td>
-        <td class="num">${fmt(p.p)}₸</td>
-        <td class="num" style="color:${mColor};font-weight:600">${fmt(marginT)}₸</td>
-        <td class="num" style="color:${mColor};font-weight:700">${marginPct}%</td>
-      </tr>`;
+      const costHTML = selMode==='full' ? `<span class="sel-card-cost">Себест: ${fmt(p.co)}₸${p.co===0?' ⚠️':''}</span>` : '';
+      const marginHTML = selMode==='full' ? `<div class="sel-card-margin" style="color:${mColor}">Маржа: ${marginPct}%</div>` : '';
+      const deleteBtn = p.custom ? `<span class="sel-card-delete" onclick="event.stopPropagation();deletePablik('${p.ig}')">✕ удалить</span>` : '';
+      return `<div class="sel-card ${checked?'selected':''}" onclick="toggleSel('${p.ig}')">
+        <div class="sel-card-check"><div class="sel-check ${checked?'checked':''}"></div></div>
+        <div class="sel-card-top">
+          <div class="sel-card-avatar" style="${_avatarGrad(p.ig)}">${letter}</div>
+          <div class="sel-card-info">
+            <a class="sel-card-handle" href="${p.l||'https://instagram.com/'+p.ig}" target="_blank" onclick="event.stopPropagation()">@${p.ig}</a>
+            <div class="sel-card-sub">${p.c} · ${ci[p.t]||''} ${p.t||''}</div>
+          </div>
+        </div>
+        <div class="sel-card-body">
+          <span class="sel-card-subs">👥 ${_fmtSubs(p.s)}</span>
+          <span class="sel-card-price">${fmt(p.p)}₸</span>
+          ${costHTML}
+        </div>
+        <div class="sel-card-reach">👁 Охват: ${reachLo}K–${reachHi}K</div>
+        ${marginHTML}
+        ${deleteBtn}
+      </div>`;
     }).join('');
+
+    cardsHTML = `<div class="sel-sort-bar"><span>Сортировка:</span>${sortBtns}</div><div class="sel-cards-grid">${cards}</div>`;
   }
 
   const zeroCostNote = zeroCostCount > 0 && selMode === 'full' ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">* ${zeroCostCount} пабликов без себестоимости</div>` : '';
@@ -2811,14 +2921,21 @@ function renderSelection(app){
       <img src="logo-dark.png" class="header-logo logo-dark" alt="Pabliki">
       <img src="logo-light.png" class="header-logo logo-light" alt="Pabliki">
       <p>Создай медиаплан из ${PABLIKI_DB.length} пабликов</p>
-      <button class="btn btn-ghost" onclick="showAddPablikModal()" style="margin-top:10px;font-size:12px;padding:8px 16px">➕ Добавить паблик</button>
+      <button class="btn btn-primary" onclick="showAddPablikModal()" style="margin-top:10px;font-size:13px;padding:10px 20px;font-weight:700">➕ Добавить паблик</button>
     </div>
+
+    ${statsBar}
     
     ${renderSavedSelectionsBlock()}
     
     <div class="mode-toggle">
       <div class="mode-btn ${selMode==='client'?'active':''}" onclick="selMode='client';render()">👤 Для клиента</div>
       <div class="mode-btn ${selMode==='full'?'active':''}" onclick="selMode='full';render()">📊 Полная</div>
+    </div>
+
+    <div class="sel-view-toggle">
+      <div class="sel-view-btn ${selViewMode==='cards'?'active':''}" onclick="selViewMode='cards';render()">🃏 Карточки</div>
+      <div class="sel-view-btn ${selViewMode==='table'?'active':''}" onclick="selViewMode='table';render()">📊 Таблица</div>
     </div>
     
     <div class="filter-section">
@@ -2884,12 +3001,7 @@ function renderSelection(app){
     </div>
     ` : ''}
     
-    <div class="table-wrap">
-      <table class="sel-table">
-        <thead>${tableHead}</thead>
-        <tbody>${tableRows}</tbody>
-      </table>
-    </div>
+    ${selViewMode === 'table' ? tableHTML : cardsHTML}
     ${hasMore ? `<button onclick="selShowCount+=100;render()" class="btn btn-primary" style="width:100%;margin:12px 0">Показать ещё (+${Math.min(100,filtered.length-selShowCount)})</button><div style="text-align:center;padding:4px;color:var(--text2);font-size:12px">Показано ${selShowCount} из ${filtered.length}</div>` : ''}
   `;
 
