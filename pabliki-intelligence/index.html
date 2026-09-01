@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Pabliki Intelligence — оценка качества Instagram-пабликов и прогноз рекламных размещений" />
+  <title>Pabliki Intelligence</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div>
+          <strong>Pabliki</strong>
+          <span>Intelligence</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard"><span>◈</span> Обзор</button>
+        <button class="nav-item" data-view="publishers"><span>▦</span> Паблики</button>
+        <button class="nav-item" data-view="campaigns"><span>↗</span> Подборки</button>
+        <button class="nav-item" data-view="audit"><span>⌁</span> Проверка пабликов</button>
+        <button class="nav-item" data-view="imports"><span>⇧</span> Импорт базы</button>
+        <button class="nav-item" data-view="methodology"><span>◎</span> Методика</button>
+      </nav>
+
+      <div class="sidebar-note">
+        <span class="dot"></span>
+        <div>
+          <b>Демо-режим</b>
+          <small>Показатели тестовые. Реальные данные подключаются через источники и историю размещений.</small>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Аналитика рекламных пабликов</p>
+          <h1 id="pageTitle">Обзор базы</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="refreshBtn">Обновить оценки</button>
+          <button class="primary-button" id="importBtn">+ Импортировать паблики</button>
+        </div>
+      </header>
+
+      <section id="dashboardView" class="view active-view">
+        <div class="notice">
+          <b>Тестовый интерфейс MVP.</b> Формулы, диапазоны прогнозов и статусы уже заложены, но демо-цифры не являются реальной оценкой указанных аккаунтов.
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card"><span>Пабликов в базе</span><strong id="totalPublishers">0</strong><small>загружено в систему</small></article>
+          <article class="stat-card"><span>Сильные паблики</span><strong id="strongPublishers">0</strong><small>Quality Score от 75</small></article>
+          <article class="stat-card"><span>Требуют проверки</span><strong id="riskyPublishers">0</strong><small>повышенный риск активности</small></article>
+          <article class="stat-card"><span>Средний прогноз CPM</span><strong id="avgCpm">—</strong><small>стоимость 1 000 просмотров</small></article>
+        </div>
+
+        <div class="panel-grid">
+          <section class="panel wide">
+            <div class="panel-head">
+              <div><h2>Паблики под контролем</h2><p>Оценка качества + прогноз рекламного результата</p></div>
+              <button class="text-button" data-jump="publishers">Открыть все →</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Паблик</th><th>Quality Score</th><th>Прогноз просмотров</th><th>ER</th><th>CPM</th><th>Риск</th></tr></thead>
+                <tbody id="dashboardTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head"><div><h2>Сигналы риска</h2><p>Что требует ручной проверки</p></div></div>
+            <div id="riskSignals" class="signal-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="publishersView" class="view">
+        <div class="toolbar">
+          <div class="search-box"><span>⌕</span><input id="searchInput" placeholder="Поиск по @username, городу или тематике" /></div>
+          <select id="riskFilter"><option value="all">Все уровни риска</option><option value="low">Низкий риск</option><option value="medium">Средний риск</option><option value="high">Высокий риск</option></select>
+          <select id="sortSelect"><option value="score-desc">По Quality Score</option><option value="views-desc">По прогнозу просмотров</option><option value="cpm-asc">По выгодному CPM</option><option value="risk-desc">По риску</option></select>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="publishers-table">
+              <thead><tr><th>Паблик</th><th>Подписчики</th><th>Quality Score</th><th>Expected Views</th><th>Вовлечённость</th><th>CPM</th><th>Confidence</th><th></th></tr></thead>
+              <tbody id="publishersTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="campaignsView" class="view">
+        <div class="selection-builder">
+          <section class="filters-card">
+            <div class="filters-frame">
+              <div class="filters-header">
+                <div class="filters-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6h16l-6.2 7v5l-3.6 1.8V13L4 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="filters-copy">
+                  <h2>Фильтры для подбора пабликов</h2>
+                  <p>Настройте параметры поиска, чтобы быстро найти самые подходящие площадки для вашей рекламной кампании.</p>
+                </div>
+              </div>
+
+              <div class="filters-grid">
+                <div class="filter-field">
+                  <div class="field-title">Поиск</div>
+                  <div class="filter-control selection-search">
+                    <span class="search-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    </span>
+                    <input id="selectionSearch" placeholder="Поиск по @username, городу или тематике" />
+                  </div>
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">Города</div>
+                  <select id="selectionCity" class="filter-select"><option value="all">Все города</option></select>
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">Тематики</div>
+                  <select id="selectionCategory" class="filter-select"><option value="all">Все тематики</option></select>
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">Риск</div>
+                  <select id="selectionRisk" class="filter-select"><option value="all">Любой риск</option><option value="low">Низкий риск</option><option value="medium">Средний риск</option><option value="high">Высокий риск</option></select>
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">Quality Score</div>
+                  <select id="selectionScore" class="filter-select"><option value="0">Любой Quality Score</option><option value="60">Score от 60</option><option value="70">Score от 70</option><option value="75">Score от 75</option><option value="80">Score от 80</option></select>
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">CPM</div>
+                  <input id="selectionMaxCpm" class="filter-input" type="number" min="0" placeholder="CPM до, ₸" />
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">Просмотры</div>
+                  <div class="filter-number-wrap">
+                    <input id="selectionMinViews" class="filter-input" type="number" min="0" placeholder="Просмотров от" />
+                  </div>
+                </div>
+
+                <div class="filter-field">
+                  <div class="field-title">Цена</div>
+                  <input id="selectionMaxPrice" class="filter-input" type="number" min="0" placeholder="Цена до, ₸" />
+                </div>
+              </div>
+
+              <div class="filters-bottom">
+                <div class="selection-count pretty-count" id="selectionCount">
+                  <span class="count-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 18V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M18 18V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <span>Найдено: <b>0</b></span>
+                  <span class="count-divider">•</span>
+                  <span>Выбрано: <b>0</b></span>
+                </div>
+                <div class="filter-buttons">
+                  <button id="clearSelectionBtn" class="outline-action">Очистить</button>
+                  <button id="selectFilteredBtn" class="selection-cta">Подобрать паблики</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="selection-meta-card">
+            <h3>Параметры подборки</h3>
+            <p>Укажите название подборки и клиента — эти данные попадут в PDF-отчёт.</p>
+            <div class="selection-meta">
+              <input id="selectionName" class="client-input" placeholder="Название подборки, например: KMF — Алматы / сентябрь" />
+              <input id="clientName" class="client-input" placeholder="Клиент / бренд" />
+            </div>
+          </section>
+        </div>
+        <div class="campaign-layout">
+          <section class="panel">
+            <div class="panel-head"><div><h2>Подбор пабликов по критериям</h2><p>Фильтруйте базу и отмечайте паблики, которые войдут в клиентскую подборку</p></div></div>
+            <div class="table-wrap">
+              <table class="selection-table">
+                <thead><tr><th>Паблик</th><th>Quality Score</th><th>Expected Views</th><th>ER</th><th>CPM</th><th>Цена</th><th>Риск</th><th>В подборку</th></tr></thead>
+                <tbody id="selectionTable"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel forecast-panel">
+            <span class="pill neutral">Selection Forecast</span>
+            <h2>Итог подборки</h2>
+            <div class="forecast-big" id="campaignViews">—</div>
+            <p>ожидаемых просмотров суммарно</p>
+            <div class="forecast-lines">
+              <div><span>Выбрано пабликов</span><b id="campaignPublishers">—</b></div>
+              <div><span>Бюджет</span><b id="campaignBudget">—</b></div>
+              <div><span>CPM — 1 000 просмотров</span><b id="campaignCpm">—</b></div>
+              <div><span>Ожидаемые взаимодействия</span><b id="campaignEngagement">—</b></div>
+              <div><span>Средняя надёжность прогноза</span><b id="campaignConfidence">—</b></div>
+            </div>
+            <div class="metrics-panel">
+              <h3>Какие показатели показать клиенту в PDF</h3>
+              <div id="metricChecks" class="metric-checks">
+                <label class="metric-check"><input type="checkbox" value="city" checked><span><b>Город</b><span>география паблика</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="followers" checked><span><b>Подписчики</b><span>размер аудитории</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="score" checked><span><b>Quality Score</b><span>общая оценка</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="views" checked><span><b>Expected Views</b><span>прогноз просмотров</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="er" checked><span><b>ER</b><span>вовлечённость</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="cpm" checked><span><b>CPM</b><span>стоимость 1 000 просмотров</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="price" checked><span><b>Цена</b><span>стоимость размещения</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="risk"><span><b>Authenticity Risk</b><span>риск искусственной активности</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="confidence"><span><b>Confidence</b><span>надёжность прогноза</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="consistency"><span><b>Consistency</b><span>стабильность</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="viral"><span><b>Viral Dependency</b><span>зависимость от вирусных постов</span></span></label>
+                <label class="metric-check"><input type="checkbox" value="retention"><span><b>Advertising Retention</b><span>сохранение трафика в рекламе</span></span></label>
+              </div>
+              <button id="downloadPdfBtn" class="primary-button pdf-button">Скачать подборку в PDF</button>
+              <div id="pdfStatus" class="audit-status"></div>
+            </div>
+            <div class="soft-warning">⚠ Суммарные просмотры не равны уникальному охвату. В клиентском PDF это будет подписано отдельно, чтобы прогноз не вводил в заблуждение.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="auditView" class="view">
+        <div class="audit-layout">
+          <section class="panel audit-entry">
+            <div class="panel-head"><div><h2>Быстрая проверка пабликов</h2><p>Один аккаунт или сразу список</p></div></div>
+            <textarea id="auditInput" class="audit-textarea" placeholder="@almaty.suntimes&#10;@typical.almaty&#10;@another.page"></textarea>
+            <div class="audit-help">Можно вставить username через новую строку, запятую или пробел. Аккаунты из базы анализируются по сохранённым данным. Для неизвестных аккаунтов в демо показывается тестовый расчёт; в рабочей версии здесь будет запускаться сбор данных из подключённых источников.</div>
+            <div class="audit-actions">
+              <button id="runAuditBtn" class="primary-button">Проверить паблики</button>
+              <button id="clearAuditBtn" class="ghost-button">Очистить</button>
+            </div>
+            <div id="auditStatus" class="audit-status">Введите один или несколько @username</div>
+          </section>
+          <section>
+            <div id="auditResults" class="audit-results"><div class="audit-empty">Результаты проверки появятся здесь.</div></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="importsView" class="view">
+        <div class="import-grid">
+          <section class="panel import-card">
+            <div class="upload-icon">⇧</div>
+            <h2>Загрузить базу пабликов</h2>
+            <p>CSV можно импортировать уже в этом прототипе. XLS/XLSX будет подключён в серверной версии.</p>
+            <label class="primary-button file-button">Выбрать файл<input id="fileInput" type="file" accept=".csv,.xls,.xlsx" hidden /></label>
+            <small>Рекомендуемые поля: username, город, тематика, подписчики, цена Reels, цена Post, цена Stories.</small>
+            <div id="importStatus" class="import-status"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>Как работает импорт</h2><p>Без дублей и ручного переноса</p></div></div>
+            <ol class="steps">
+              <li><b>Нормализуем username</b><span>@Almaty.Suntimes и almaty.suntimes считаются одним пабликом.</span></li>
+              <li><b>Обновляем карточку</b><span>Новая цена и параметры заменяют устаревшие данные.</span></li>
+              <li><b>Запускаем оценку</b><span>Система пересчитывает качество, риск и прогноз.</span></li>
+              <li><b>Сохраняем историю</b><span>Изменения цены, аудитории и эффективности не теряются.</span></li>
+            </ol>
+          </section>
+        </div>
+      </section>
+
+      <section id="methodologyView" class="view">
+        <div class="method-grid">
+          <article class="panel method-card"><span>01</span><h3>Quality Score — Общая оценка</h3><p>Сводный показатель качества паблика. Не равен «проценту живых подписчиков».</p></article>
+          <article class="panel method-card"><span>02</span><h3>Authenticity Risk — Риск искусственной активности</h3><p>Ищем несоответствие просмотров лайкам и комментариям, выбросы и нестабильность.</p></article>
+          <article class="panel method-card"><span>03</span><h3>Expected Views — Прогноз просмотров</h3><p>Используем медиану и устойчивые диапазоны, а вирусные выбросы не дают завышать прогноз.</p></article>
+          <article class="panel method-card"><span>04</span><h3>Advertising Retention — Сохранение трафика в рекламе</h3><p>Сравниваем рекламные публикации с органическими и учитываем, насколько реклама проседает.</p></article>
+          <article class="panel method-card"><span>05</span><h3>CPM — Стоимость 1 000 просмотров</h3><p>Помогает сравнивать паблики разного размера и цены по ожидаемой эффективности.</p></article>
+          <article class="panel method-card"><span>06</span><h3>Confidence — Надёжность прогноза</h3><p>Зависит от объёма истории, числа рекламных размещений и качества исходных данных.</p></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+  <aside id="publisherDrawer" class="drawer" aria-hidden="true">
+    <button id="closeDrawer" class="drawer-close">×</button>
+    <div id="drawerContent"></div>
+  </aside>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
