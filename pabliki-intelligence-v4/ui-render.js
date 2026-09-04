@@ -1,0 +1,1 @@
+document.getElementById('app').innerHTML=(window.__PABLIKI_UI||[]).join('');
